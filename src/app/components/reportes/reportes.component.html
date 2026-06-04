@@ -1,1 +1,224 @@
-<p>reportes works!</p>
+<div class="reportes-page">
+
+  <div class="page-title">
+    <div>
+      <h2>Reportes generados</h2>
+      <p>
+        Consulta de reportes generados a partir de las predicciones de riesgo asistencial.
+      </p>
+    </div>
+
+    <button class="btn-refresh" (click)="cargarReportes()">
+      Actualizar
+    </button>
+  </div>
+
+  <div class="nota-info">
+    <strong>Nota:</strong>
+    Los reportes presentan resultados referenciales generados por el prototipo.
+    No reemplazan decisiones clínicas, no asignan camas automáticamente y no representan disponibilidad en tiempo real.
+  </div>
+
+  <section class="cards-grid">
+
+    <article class="card-kpi">
+      <span>Total reportes</span>
+      <h3>{{ reportes.length }}</h3>
+      <p>Reportes registrados en el sistema.</p>
+    </article>
+
+    <article class="card-kpi">
+      <span>Riesgo alto</span>
+      <h3>{{ contarRiesgoAlto() }}</h3>
+      <p>Reportes con mayor prioridad de revisión.</p>
+    </article>
+
+    <article class="card-kpi">
+      <span>Riesgo medio</span>
+      <h3>{{ contarRiesgoMedio() }}</h3>
+      <p>Reportes con seguimiento preventivo.</p>
+    </article>
+
+    <article class="card-kpi">
+      <span>Riesgo bajo</span>
+      <h3>{{ contarRiesgoBajo() }}</h3>
+      <p>Reportes con presión asistencial baja.</p>
+    </article>
+
+  </section>
+
+  <section class="filtros-card">
+
+    <div class="filtro-group">
+      <label>Buscar</label>
+      <input
+        type="text"
+        [(ngModel)]="filtroTexto"
+        (input)="aplicarFiltros()"
+        placeholder="Buscar por archivo, servicio, usuario o modelo">
+    </div>
+
+    <div class="filtro-group">
+      <label>Nivel de riesgo</label>
+      <select [(ngModel)]="filtroRiesgo" (change)="aplicarFiltros()">
+        <option value="TODOS">Todos</option>
+        <option value="ALTO">Riesgo alto</option>
+        <option value="MEDIO">Riesgo medio</option>
+        <option value="BAJO">Riesgo bajo</option>
+      </select>
+    </div>
+
+    <div class="filtro-group">
+      <label>ID Archivo</label>
+      <input
+        type="number"
+        [(ngModel)]="idArchivoBusqueda"
+        min="1"
+        placeholder="Ejemplo: 1">
+    </div>
+
+    <button class="btn-primary-ipress" (click)="buscarPorArchivo()">
+      Buscar archivo
+    </button>
+
+    <button class="btn-light-ipress" (click)="limpiarFiltros()">
+      Limpiar
+    </button>
+
+  </section>
+
+  <div *ngIf="cargando" class="estado-box">
+    Cargando reportes...
+  </div>
+
+  <div *ngIf="error" class="error-box">
+    {{ error }}
+  </div>
+
+  <section *ngIf="!cargando && !error" class="tabla-card">
+
+    <div class="tabla-header">
+      <div>
+        <h3>Listado de reportes</h3>
+        <p>{{ reportesFiltrados.length }} reporte(s) encontrado(s)</p>
+      </div>
+    </div>
+
+    <div *ngIf="reportesFiltrados.length === 0" class="empty-box">
+      No existen reportes registrados o no hay coincidencias con los filtros aplicados.
+    </div>
+
+    <div class="table-responsive" *ngIf="reportesFiltrados.length > 0">
+
+      <table class="tabla-reportes">
+        <thead>
+          <tr>
+            <th>ID Reporte</th>
+            <th>Archivo</th>
+            <th>Periodo</th>
+            <th>Servicio</th>
+            <th>Riesgo</th>
+            <th>Probabilidad</th>
+            <th>Ocupación</th>
+            <th>Presión</th>
+            <th>Prom. estancia</th>
+            <th>Modelo</th>
+            <th>Generado por</th>
+            <th>Fecha generación</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let reporte of reportesFiltrados">
+
+            <td>{{ reporte.idReporte }}</td>
+
+            <td>
+              <strong>{{ reporte.nombreArchivo || 'No especificado' }}</strong>
+              <br>
+              <small>ID Archivo: {{ reporte.idArchivo }}</small>
+            </td>
+
+            <td>{{ reporte.mes }}/{{ reporte.anio }}</td>
+
+            <td>{{ reporte.servicioHospitalario || 'No especificado' }}</td>
+
+            <td>
+              <span class="badge-riesgo" [ngClass]="obtenerClaseRiesgo(reporte.nivelRiesgo)">
+                {{ reporte.nivelRiesgo }}
+              </span>
+            </td>
+
+            <td>{{ convertirPorcentaje(reporte.probabilidad) }}</td>
+
+            <td>{{ convertirPorcentaje(reporte.ocupacionEstimada) }}</td>
+
+            <td>{{ reporte.presionIngresosCamas || 0 }}</td>
+
+            <td>{{ reporte.promedioEstancia || 0 }}</td>
+
+            <td>
+              <small>{{ reporte.modeloUtilizado }}</small>
+            </td>
+
+            <td>{{ reporte.usuarioGenerador || 'No especificado' }}</td>
+
+            <td>{{ reporte.fechaGeneracion | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+  </section>
+
+  <section class="reportes-grid" *ngIf="!cargando && !error && reportesFiltrados.length > 0">
+
+    <article class="reporte-card" *ngFor="let reporte of reportesFiltrados">
+
+      <div class="reporte-header">
+        <div>
+          <h4>Reporte #{{ reporte.idReporte }}</h4>
+          <p>{{ reporte.servicioHospitalario }} · {{ reporte.mes }}/{{ reporte.anio }}</p>
+        </div>
+
+        <span class="badge-riesgo" [ngClass]="obtenerClaseRiesgo(reporte.nivelRiesgo)">
+          {{ reporte.nivelRiesgo }}
+        </span>
+      </div>
+
+      <div class="reporte-body">
+
+        <div class="reporte-item">
+          <span>Archivo</span>
+          <strong>{{ reporte.nombreArchivo || 'No especificado' }}</strong>
+        </div>
+
+        <div class="reporte-item">
+          <span>Probabilidad</span>
+          <strong>{{ convertirPorcentaje(reporte.probabilidad) }}</strong>
+        </div>
+
+        <div class="reporte-item">
+          <span>Ocupación estimada</span>
+          <strong>{{ convertirPorcentaje(reporte.ocupacionEstimada) }}</strong>
+        </div>
+
+        <div class="reporte-item">
+          <span>Presión ingresos/camas</span>
+          <strong>{{ reporte.presionIngresosCamas || 0 }}</strong>
+        </div>
+
+      </div>
+
+      <div class="reporte-footer">
+        <small>Modelo: {{ reporte.modeloUtilizado }}</small>
+        <small>Generado: {{ reporte.fechaGeneracion | date:'dd/MM/yyyy HH:mm' }}</small>
+      </div>
+
+    </article>
+
+  </section>
+
+</div>

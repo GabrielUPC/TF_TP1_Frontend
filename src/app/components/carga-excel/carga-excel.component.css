@@ -1,0 +1,284 @@
+.carga-page {
+  width: 100%;
+}
+
+.page-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.page-title h2 {
+  margin: 0;
+  color: #102a43;
+  font-weight: 800;
+  font-size: 28px;
+}
+
+.page-title p {
+  margin: 6px 0 0;
+  color: #6b7c93;
+  font-size: 15px;
+}
+
+.btn-primary-ipress,
+.btn-secondary-ipress,
+.btn-light-ipress {
+  border: none;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary-ipress {
+  background: #0f3d5e;
+  color: #ffffff;
+}
+
+.btn-primary-ipress:hover {
+  background: #082236;
+}
+
+.btn-secondary-ipress {
+  background: #2ec4b6;
+  color: #062135;
+}
+
+.btn-secondary-ipress:hover {
+  background: #26a99d;
+}
+
+.btn-light-ipress {
+  background: #eef6fb;
+  color: #0f3d5e;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.nota-info {
+  background: #eef6fb;
+  border-left: 5px solid #0f3d5e;
+  color: #102a43;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+
+.form-card,
+.resultado-card {
+  background: #ffffff;
+  border: 1px solid #e5edf5;
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 22px rgba(16, 42, 67, 0.06);
+}
+
+.form-card h3 {
+  margin: 0 0 18px;
+  color: #102a43;
+  font-weight: 800;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-group label {
+  color: #334e68;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.form-group input {
+  border: 1px solid #d8e6f0;
+  border-radius: 12px;
+  padding: 11px 13px;
+  outline: none;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  border-color: #0f3d5e;
+}
+
+.upload-box {
+  border: 2px dashed #b8c7d9;
+  background: #f8fbfd;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.upload-box input {
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #d8e6f0;
+}
+
+.upload-text h4 {
+  margin: 0;
+  color: #102a43;
+  font-weight: 800;
+}
+
+.upload-text p {
+  margin: 5px 0 0;
+  color: #6b7c93;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.error-box {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  border: 1px solid #fecaca;
+}
+
+.resultado-header {
+  padding: 18px;
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.resultado-header.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.resultado-header.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.resultado-header h3 {
+  margin: 0;
+  font-weight: 800;
+}
+
+.resultado-header p {
+  margin: 5px 0 0;
+}
+
+.resultado-header span {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.resultado-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.resultado-item {
+  background: #f8fbfd;
+  border: 1px solid #e5edf5;
+  border-radius: 14px;
+  padding: 15px;
+}
+
+.resultado-item span {
+  display: block;
+  color: #6b7c93;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.resultado-item strong {
+  color: #102a43;
+  font-size: 16px;
+}
+
+.errores-section {
+  margin-top: 24px;
+}
+
+.errores-section h3 {
+  margin: 0 0 14px;
+  color: #102a43;
+  font-weight: 800;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tabla-errores {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.tabla-errores thead {
+  background: #fee2e2;
+}
+
+.tabla-errores th {
+  color: #991b1b;
+  text-align: left;
+  font-size: 13px;
+  padding: 13px;
+  border-bottom: 1px solid #fecaca;
+}
+
+.tabla-errores td {
+  padding: 13px;
+  border-bottom: 1px solid #edf2f7;
+  color: #334e68;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .page-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .form-grid,
+  .resultado-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .resultado-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

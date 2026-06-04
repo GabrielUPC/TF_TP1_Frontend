@@ -1,16 +1,19 @@
 export interface DashboardResumen {
-  mensajeResumen: string;
-  nivelRiesgoPredominante: string;
+  totalPredicciones: number;
+  totalRiesgoBajo: number;
+  totalRiesgoMedio: number;
+  totalRiesgoAlto: number;
+
   promedioOcupacionEstimada: number;
   promedioPresionIngresosCamas: number;
   promedioProbabilidad: number;
-  totalCamasDisponiblesHabilitadas: number;
+
+  totalIngresos: number;
   totalEgresos: number;
   totalEstancias: number;
-  totalIngresos: number;
   totalPacientesCama: number;
-  totalPredicciones: number;
-  totalRiesgoAlto: number;
-  totalRiesgoBajo: number;
-  totalRiesgoMedio: number;
+  totalCamasDisponiblesHabilitadas: number;
+
+  nivelRiesgoPredominante: string;
+  mensajeResumen: string;
 }

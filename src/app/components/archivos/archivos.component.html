@@ -1,1 +1,122 @@
-<p>archivos works!</p>
+<div class="archivos-page">
+
+  <div class="page-title">
+    <div>
+      <h2>Historial de archivos cargados</h2>
+      <p>
+        Consulta los archivos Excel cargados, su estado de validación y su procesamiento.
+      </p>
+    </div>
+
+    <button class="btn-refresh" (click)="cargarArchivos()">
+      Actualizar
+    </button>
+  </div>
+
+  <div class="nota-info">
+    <strong>Nota:</strong>
+    El historial permite verificar si los archivos fueron validados y procesados correctamente
+    antes de revisar los indicadores, alertas y reportes generados.
+  </div>
+
+  <div class="filtros-card">
+
+    <div class="filtro-group">
+      <label>Buscar</label>
+      <input
+        type="text"
+        [value]="filtroTexto"
+        (input)="aplicarFiltroTexto($event)"
+        placeholder="Buscar por archivo, IPRESS o usuario">
+    </div>
+
+    <div class="filtro-group">
+      <label>Estado</label>
+      <select [value]="filtroEstado" (change)="aplicarFiltroEstado($event)">
+        <option value="TODOS">Todos</option>
+        <option value="VALIDADO">Validado</option>
+        <option value="PROCESADO">Procesado</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="ERROR">Error</option>
+      </select>
+    </div>
+
+    <button class="btn-light-ipress" (click)="limpiarFiltros()">
+      Limpiar filtros
+    </button>
+
+  </div>
+
+  <div *ngIf="cargando" class="estado-box">
+    Cargando historial de archivos...
+  </div>
+
+  <div *ngIf="error" class="error-box">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!cargando && !error" class="tabla-card">
+
+    <div class="tabla-header">
+      <div>
+        <h3>Archivos registrados</h3>
+        <p>{{ archivosFiltrados.length }} archivo(s) encontrado(s)</p>
+      </div>
+    </div>
+
+    <div *ngIf="archivosFiltrados.length === 0" class="empty-box">
+      No existen archivos registrados o no hay coincidencias con los filtros aplicados.
+    </div>
+
+    <div class="table-responsive" *ngIf="archivosFiltrados.length > 0">
+
+      <table class="tabla-archivos">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Archivo</th>
+            <th>IPRESS</th>
+            <th>Usuario</th>
+            <th>Formato</th>
+            <th>Fecha de carga</th>
+            <th>Validación</th>
+            <th>Procesamiento</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let archivo of archivosFiltrados">
+            <td>{{ archivo.idArchivo }}</td>
+
+            <td>
+              <strong>{{ archivo.nombreArchivo }}</strong>
+            </td>
+
+            <td>{{ archivo.nombreIpress || 'No especificada' }}</td>
+
+            <td>{{ archivo.nombreUsuario || 'No especificado' }}</td>
+
+            <td>{{ archivo.formato }}</td>
+
+            <td>{{ archivo.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>
+              <span class="badge-estado" [ngClass]="obtenerClaseEstado(archivo.estadoValidacion)">
+                {{ archivo.estadoValidacion }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge-estado" [ngClass]="obtenerClaseEstado(archivo.estadoProcesamiento)">
+                {{ archivo.estadoProcesamiento }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

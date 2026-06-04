@@ -1,20 +1,15 @@
-export interface DashboardDetalle {
+export interface Reporte {
+  idReporte: number;
   idPrediccion: number;
   idIndicador: number;
   idRegistro: number;
+
   idArchivo: number;
   nombreArchivo: string;
 
   anio: number;
   mes: number;
   servicioHospitalario: string;
-
-  ingresos: number;
-  egresos: number;
-  estancias: number;
-  pacientesCama: number;
-  camasTotales: number;
-  camasDisponiblesHabilitadas: number;
 
   ocupacionEstimada: number;
   presionIngresosCamas: number;
@@ -26,6 +21,7 @@ export interface DashboardDetalle {
   modeloUtilizado: string;
   fechaPrediccion: string;
 
-  alerta: string;
-  interpretacion: string;
+  fechaGeneracion: string;
+  usuarioGenerador: string;
+  rutaArchivo: string;
 }

@@ -1,1 +1,183 @@
-<p>alertas works!</p>
+<div class="alertas-page">
+
+  <div class="page-title">
+    <div>
+      <h2>Alertas de riesgo asistencial</h2>
+      <p>
+        Identificación de servicios hospitalarios con riesgo medio o alto según los indicadores procesados.
+      </p>
+    </div>
+
+    <button class="btn-refresh" (click)="cargarAlertas()">
+      Actualizar
+    </button>
+  </div>
+
+  <div class="nota-info">
+    <strong>Nota:</strong>
+    Las alertas son referenciales y sirven como apoyo para el seguimiento de la capacidad asistencial.
+    No reemplazan decisiones clínicas, no asignan camas automáticamente y no representan disponibilidad en tiempo real.
+  </div>
+
+  <div class="filtros-card">
+
+    <div class="filtro-group">
+      <label>Filtrar por nivel de riesgo</label>
+      <select [value]="filtroRiesgo" (change)="aplicarFiltroRiesgo($event)">
+        <option value="TODOS">Todos</option>
+        <option value="ALTO">Riesgo alto</option>
+        <option value="MEDIO">Riesgo medio</option>
+      </select>
+    </div>
+
+    <button class="btn-light-ipress" (click)="limpiarFiltro()">
+      Limpiar filtro
+    </button>
+
+  </div>
+
+  <div *ngIf="cargando" class="estado-box">
+    Cargando alertas...
+  </div>
+
+  <div *ngIf="error" class="error-box">
+    {{ error }}
+  </div>
+
+  <ng-container *ngIf="!cargando && !error">
+
+    <section class="cards-grid">
+
+      <article class="card-kpi">
+        <span>Total alertas</span>
+        <h3>{{ alertas.length }}</h3>
+        <p>Servicios con riesgo medio o alto.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Alertas filtradas</span>
+        <h3>{{ alertasFiltradas.length }}</h3>
+        <p>Resultado según el filtro seleccionado.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Riesgo alto</span>
+        <h3>{{ contarRiesgoAlto() }}</h3>
+        <p>Casos que requieren revisión prioritaria.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Riesgo medio</span>
+        <h3>{{ contarRiesgoMedio() }}</h3>
+        <p>Casos que requieren seguimiento preventivo.</p>
+      </article>
+
+    </section>
+
+    <section class="alertas-section">
+
+      <div class="section-header">
+        <div>
+          <h3>Listado de alertas</h3>
+          <p>{{ alertasFiltradas.length }} alerta(s) encontrada(s)</p>
+        </div>
+      </div>
+
+      <div *ngIf="alertasFiltradas.length === 0" class="empty-box">
+        No existen alertas registradas o no hay coincidencias con el filtro seleccionado.
+      </div>
+
+      <div class="alertas-grid" *ngIf="alertasFiltradas.length > 0">
+
+        <article class="alerta-card" *ngFor="let alerta of alertasFiltradas">
+
+          <div class="alerta-header">
+            <div>
+              <h4>{{ alerta.servicioHospitalario }}</h4>
+              <p>
+                Periodo: {{ alerta.mes }}/{{ alerta.anio }}
+              </p>
+            </div>
+
+            <span class="badge-riesgo" [ngClass]="obtenerClaseRiesgo(alerta.nivelRiesgo)">
+              {{ alerta.nivelRiesgo }}
+            </span>
+          </div>
+
+          <div class="alerta-body">
+            <p class="alerta-mensaje">
+              {{ alerta.alerta }}
+            </p>
+
+            <p class="interpretacion">
+              {{ alerta.interpretacion }}
+            </p>
+          </div>
+
+          <div class="indicadores-grid">
+
+            <div class="indicador-item">
+              <span>Probabilidad</span>
+              <strong>{{ convertirPorcentaje(alerta.probabilidad) }}</strong>
+            </div>
+
+            <div class="indicador-item">
+              <span>Ocupación estimada</span>
+              <strong>{{ convertirPorcentaje(alerta.ocupacionEstimada) }}</strong>
+            </div>
+
+            <div class="indicador-item">
+              <span>Presión ingresos/camas</span>
+              <strong>{{ alerta.presionIngresosCamas || 0 }}</strong>
+            </div>
+
+            <div class="indicador-item">
+              <span>Prom. estancia</span>
+              <strong>{{ alerta.promedioEstancia || 0 }}</strong>
+            </div>
+
+          </div>
+
+          <div class="detalle-grid">
+
+            <div>
+              <span>Ingresos</span>
+              <strong>{{ mostrarNumero(alerta.ingresos) }}</strong>
+            </div>
+
+            <div>
+              <span>Egresos</span>
+              <strong>{{ mostrarNumero(alerta.egresos) }}</strong>
+            </div>
+
+            <div>
+              <span>Camas totales</span>
+              <strong>{{ mostrarNumero(alerta.camasTotales) }}</strong>
+            </div>
+
+            <div>
+              <span>Camas disponibles</span>
+              <strong>{{ mostrarNumero(alerta.camasDisponiblesHabilitadas) }}</strong>
+            </div>
+
+          </div>
+
+          <div class="alerta-footer">
+            <small>
+              Archivo: {{ alerta.nombreArchivo || 'No especificado' }}
+            </small>
+
+            <small>
+              Modelo: {{ alerta.modeloUtilizado }}
+            </small>
+          </div>
+
+        </article>
+
+      </div>
+
+    </section>
+
+  </ng-container>
+
+</div>

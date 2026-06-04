@@ -1,1 +1,200 @@
-<p>dashboard works!</p>
+<div class="dashboard-page">
+
+  <div class="dashboard-title">
+    <div>
+      <h2>Dashboard de Riesgo Asistencial</h2>
+      <p>
+        Resumen de indicadores hospitalarios, capacidad de camas, alertas y resultados predictivos.
+      </p>
+    </div>
+
+    <button class="btn-refresh" (click)="cargarDashboard()">
+      Actualizar
+    </button>
+  </div>
+
+  <div class="nota-predictiva">
+    <strong>Nota:</strong>
+    El resultado predictivo es referencial, no reemplaza decisiones clínicas,
+    no asigna camas automáticamente y no representa disponibilidad en tiempo real.
+  </div>
+
+  <div *ngIf="cargando" class="estado-box">
+    Cargando información del dashboard...
+  </div>
+
+  <div *ngIf="error" class="error-box">
+    {{ error }}
+  </div>
+
+  <ng-container *ngIf="!cargando && !error">
+
+    <section class="cards-grid">
+
+      <article class="card-kpi">
+        <span>Total predicciones</span>
+        <h3>{{ resumen?.totalPredicciones || 0 }}</h3>
+        <p>Resultados generados por el prototipo.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Riesgo alto</span>
+        <h3>{{ resumen?.totalRiesgoAlto || 0 }}</h3>
+        <p>Servicios con mayor presión asistencial.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Riesgo medio</span>
+        <h3>{{ resumen?.totalRiesgoMedio || 0 }}</h3>
+        <p>Servicios que requieren seguimiento preventivo.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Riesgo predominante</span>
+        <h3>{{ resumen?.nivelRiesgoPredominante || 'SIN DATOS' }}</h3>
+        <p>Clasificación general del periodo procesado.</p>
+      </article>
+
+    </section>
+
+    <section class="cards-grid secundario">
+
+      <article class="card-kpi">
+        <span>Ocupación estimada promedio</span>
+        <h3>{{ convertirPorcentaje(resumen?.promedioOcupacionEstimada) }}</h3>
+        <p>Relación estimada entre uso y capacidad de camas.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Presión ingresos/camas</span>
+        <h3>{{ resumen?.promedioPresionIngresosCamas || 0 }}</h3>
+        <p>Promedio de presión asistencial registrada.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Probabilidad promedio</span>
+        <h3>{{ convertirPorcentaje(resumen?.promedioProbabilidad) }}</h3>
+        <p>Promedio del resultado predictivo referencial.</p>
+      </article>
+
+      <article class="card-kpi">
+        <span>Camas disponibles habilitadas</span>
+        <h3>{{ resumen?.totalCamasDisponiblesHabilitadas || 0 }}</h3>
+        <p>Total registrado en los archivos procesados.</p>
+      </article>
+
+    </section>
+
+    <section class="resumen-box" *ngIf="resumen?.mensajeResumen">
+      <h3>Resumen interpretativo</h3>
+      <p>{{ resumen?.mensajeResumen }}</p>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="section-header">
+        <div>
+          <h3>Alertas asistenciales</h3>
+          <p>Servicios con riesgo medio o alto según los indicadores calculados.</p>
+        </div>
+
+        <span>{{ alertas.length }} alerta(s)</span>
+      </div>
+
+      <div *ngIf="alertas.length === 0" class="empty-box">
+        No existen alertas registradas por el momento.
+      </div>
+
+      <div class="alertas-list" *ngIf="alertas.length > 0">
+
+        <div class="alerta-card" *ngFor="let alerta of alertas">
+
+          <div>
+            <h4>{{ alerta.servicioHospitalario }}</h4>
+            <p>
+              Periodo: {{ alerta.mes }}/{{ alerta.anio }}
+              · Archivo: {{ alerta.nombreArchivo || 'No especificado' }}
+            </p>
+            <small>{{ alerta.alerta }}</small>
+          </div>
+
+          <span class="badge-riesgo" [ngClass]="obtenerClaseRiesgo(alerta.nivelRiesgo)">
+            {{ alerta.nivelRiesgo }}
+          </span>
+
+        </div>
+
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="section-header">
+        <div>
+          <h3>Detalle hospitalario y predictivo</h3>
+          <p>Información procesada desde los registros hospitalarios cargados.</p>
+        </div>
+
+        <span>{{ detalle.length }} registro(s)</span>
+      </div>
+
+      <div *ngIf="detalle.length === 0" class="empty-box">
+        Todavía no existen registros para mostrar. Primero carga un archivo Excel válido.
+      </div>
+
+      <div class="table-responsive" *ngIf="detalle.length > 0">
+
+        <table class="table-dashboard">
+          <thead>
+            <tr>
+              <th>Periodo</th>
+              <th>Servicio</th>
+              <th>Ingresos</th>
+              <th>Egresos</th>
+              <th>Camas totales</th>
+              <th>Camas disponibles</th>
+              <th>Ocupación</th>
+              <th>Prom. estancia</th>
+              <th>Riesgo</th>
+              <th>Probabilidad</th>
+              <th>Modelo</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of detalle">
+              <td>{{ item.mes }}/{{ item.anio }}</td>
+
+              <td>
+                <strong>{{ item.servicioHospitalario }}</strong>
+                <br>
+                <small>{{ item.nombreArchivo }}</small>
+              </td>
+
+              <td>{{ mostrarNumero(item.ingresos) }}</td>
+              <td>{{ mostrarNumero(item.egresos) }}</td>
+              <td>{{ mostrarNumero(item.camasTotales) }}</td>
+              <td>{{ mostrarNumero(item.camasDisponiblesHabilitadas) }}</td>
+
+              <td>{{ convertirPorcentaje(item.ocupacionEstimada) }}</td>
+              <td>{{ item.promedioEstancia || 0 }}</td>
+
+              <td>
+                <span class="badge-riesgo" [ngClass]="obtenerClaseRiesgo(item.nivelRiesgo)">
+                  {{ item.nivelRiesgo }}
+                </span>
+              </td>
+
+              <td>{{ convertirPorcentaje(item.probabilidad) }}</td>
+
+              <td>
+                <small>{{ item.modeloUtilizado }}</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </section>
+
+  </ng-container>
+
+</div>

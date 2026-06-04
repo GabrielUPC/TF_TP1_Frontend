@@ -1,1 +1,163 @@
-<p>carga-excel works!</p>
+<div class="carga-page">
+
+  <div class="page-title">
+    <div>
+      <h2>Carga de información hospitalaria</h2>
+      <p>
+        Carga, validación y procesamiento de archivos Excel con información mensual de hospitalización.
+      </p>
+    </div>
+
+    <button class="btn-secondary-ipress" (click)="descargarPlantilla()" [disabled]="descargando">
+      {{ descargando ? 'Descargando...' : 'Descargar plantilla' }}
+    </button>
+  </div>
+
+  <div class="nota-info">
+    <strong>Importante:</strong>
+    El archivo debe estar en formato .xlsx y respetar las columnas de la plantilla:
+    código RENIPRESS, año, mes, servicio hospitalario, ingresos, egresos, estancias,
+    pacientes-cama, camas totales y camas disponibles habilitadas.
+  </div>
+
+  <div class="form-card">
+
+    <h3>Seleccionar archivo Excel</h3>
+
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label for="idUsuario">ID Usuario</label>
+        <input
+          id="idUsuario"
+          type="number"
+          [(ngModel)]="idUsuario"
+          min="1"
+          placeholder="Ejemplo: 1">
+      </div>
+
+      <div class="form-group">
+        <label for="idIpress">ID IPRESS</label>
+        <input
+          id="idIpress"
+          type="number"
+          [(ngModel)]="idIpress"
+          min="1"
+          placeholder="Ejemplo: 1">
+      </div>
+
+    </div>
+
+    <div class="upload-box">
+      <input
+        id="archivoExcel"
+        type="file"
+        accept=".xlsx"
+        (change)="seleccionarArchivo($event)">
+
+      <div class="upload-text">
+        <h4>{{ archivoSeleccionado ? archivoSeleccionado.name : 'Selecciona un archivo .xlsx' }}</h4>
+        <p>
+          El archivo será validado y procesado por el backend.
+        </p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary-ipress" (click)="cargarExcel()" [disabled]="cargando">
+        {{ cargando ? 'Procesando...' : 'Cargar y procesar Excel' }}
+      </button>
+
+      <button class="btn-light-ipress" (click)="limpiar()" [disabled]="cargando">
+        Limpiar
+      </button>
+    </div>
+
+  </div>
+
+  <div *ngIf="error" class="error-box">
+    {{ error }}
+  </div>
+
+  <div *ngIf="resultado" class="resultado-card">
+
+    <div class="resultado-header" [ngClass]="esCargaExitosa() ? 'success' : 'danger'">
+      <div>
+        <h3>{{ esCargaExitosa() ? 'Carga procesada correctamente' : 'Carga con observaciones' }}</h3>
+        <p>{{ resultado.mensaje }}</p>
+      </div>
+
+      <span>
+        {{ resultado.estadoValidacion }} / {{ resultado.estadoProcesamiento }}
+      </span>
+    </div>
+
+    <div class="resultado-grid">
+
+      <div class="resultado-item">
+        <span>ID Archivo</span>
+        <strong>{{ resultado.idArchivo }}</strong>
+      </div>
+
+      <div class="resultado-item">
+        <span>Archivo</span>
+        <strong>{{ resultado.nombreArchivo }}</strong>
+      </div>
+
+      <div class="resultado-item">
+        <span>Filas leídas</span>
+        <strong>{{ resultado.totalFilasLeidas }}</strong>
+      </div>
+
+      <div class="resultado-item">
+        <span>Registros válidos</span>
+        <strong>{{ resultado.registrosValidos }}</strong>
+      </div>
+
+      <div class="resultado-item">
+        <span>Registros con errores</span>
+        <strong>{{ resultado.registrosConErrores }}</strong>
+      </div>
+
+      <div class="resultado-item">
+        <span>Formato</span>
+        <strong>{{ resultado.formato }}</strong>
+      </div>
+
+    </div>
+
+    <div *ngIf="resultado.errores && resultado.errores.length > 0" class="errores-section">
+
+      <h3>Errores de validación</h3>
+
+      <div class="table-responsive">
+
+        <table class="tabla-errores">
+          <thead>
+            <tr>
+              <th>Fila</th>
+              <th>Campo</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th>Recomendación</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let error of resultado.errores">
+              <td>{{ error.fila }}</td>
+              <td>{{ error.campo }}</td>
+              <td>{{ error.tipoError }}</td>
+              <td>{{ error.descripcion }}</td>
+              <td>{{ error.recomendacion }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
