@@ -1,72 +1,120 @@
-<div class="app-layout">
+<ng-container *ngIf="esRutaAuth(); else layoutPrincipal">
+  <router-outlet></router-outlet>
+</ng-container>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-circle">IP</div>
-      <div>
-        <h5>IPRESS</h5>
-        <span>Plataforma Predictiva</span>
-      </div>
-    </div>
+<ng-template #layoutPrincipal>
 
-    <nav class="sidebar-menu">
-      <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
-        <span class="menu-icon">📊</span>
-        Dashboard
-      </a>
+  <div class="app-layout">
 
-      <a routerLink="/carga-excel" routerLinkActive="active" class="menu-item">
-        <span class="menu-icon">📁</span>
-        Carga Excel
-      </a>
+    <aside class="sidebar">
 
-      <a routerLink="/archivos" routerLinkActive="active" class="menu-item">
-        <span class="menu-icon">🗂️</span>
-        Historial
-      </a>
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <span>IP</span>
+        </div>
 
-      <a routerLink="/alertas" routerLinkActive="active" class="menu-item">
-        <span class="menu-icon">🚨</span>
-        Alertas
-      </a>
-
-      <a routerLink="/reportes" routerLinkActive="active" class="menu-item">
-        <span class="menu-icon">📄</span>
-        Reportes
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <small>Proyecto TP1</small>
-      <strong>Spring Boot + PostgreSQL</strong>
-    </div>
-  </aside>
-
-  <!-- Main content -->
-  <section class="main-content">
-
-    <!-- Topbar -->
-    <header class="topbar">
-      <div>
-        <h4>Plataforma web predictiva</h4>
-        <p>Riesgo de insuficiencia de capacidad asistencial en IPRESS públicas</p>
-      </div>
-
-      <div class="user-card">
-        <div class="user-avatar">A</div>
         <div>
-          <strong>Administrador</strong>
-          <span>Modo desarrollo</span>
+          <h5>Plataforma</h5>
+          <strong>Predictiva IPRESS</strong>
         </div>
       </div>
-    </header>
 
-    <!-- Page content -->
-    <main class="page-container">
-      <router-outlet></router-outlet>
-    </main>
+      <nav class="sidebar-menu">
 
-  </section>
+        <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+          <span class="menu-icon">⌂</span>
+          Inicio
+        </a>
 
-</div>
+        <a
+          *ngIf="esHospitalizacion()"
+          routerLink="/dashboard"
+          routerLinkActive="active"
+          class="menu-item">
+          <span class="menu-icon">◔</span>
+          Dashboard predictivo
+        </a>
+
+        <a
+          *ngIf="esAdmision()"
+          routerLink="/carga-excel"
+          routerLinkActive="active"
+          class="menu-item">
+          <span class="menu-icon">▣</span>
+          Datos
+        </a>
+
+        <a
+          *ngIf="esAdmision()"
+          routerLink="/archivos"
+          routerLinkActive="active"
+          class="menu-item">
+          <span class="menu-icon">▤</span>
+          Historial
+        </a>
+
+        <a
+          *ngIf="esHospitalizacion()"
+          routerLink="/alertas"
+          routerLinkActive="active"
+          class="menu-item">
+          <span class="menu-icon">⚠</span>
+          Alertas
+        </a>
+
+        <a routerLink="/reportes" routerLinkActive="active" class="menu-item">
+          <span class="menu-icon">▦</span>
+          Reportes
+        </a>
+
+        <a *ngIf="esAdmin()" routerLink="/usuarios"  routerLinkActive="active" class="menu-item">
+        <span class="menu-icon">👥</span>
+        Usuarios </a>
+
+        <a class="menu-item disabled">
+          <span class="menu-icon">⚙</span>
+          Configuración
+        </a>
+
+      </nav>
+
+    </aside>
+
+    <section class="main-content">
+
+      <header class="topbar">
+
+        <div class="brand-ipress">
+          <div class="hospital-icon">▥</div>
+          <div>
+            <span>IPRESS asignada:</span>
+            <strong>{{ obtenerUsuario()?.ipressAsignada || 'No asignada' }}</strong>
+          </div>
+        </div>
+
+        <div class="user-card">
+          <div class="user-avatar">
+            {{ obtenerUsuario()?.nombre?.charAt(0) || 'U' }}
+          </div>
+
+          <div>
+            <strong>{{ obtenerUsuario()?.nombre || 'Usuario' }}</strong>
+            <span>{{ obtenerUsuario()?.nombreRol || 'Modo desarrollo' }}</span>
+          </div>
+
+          <button class="btn-logout" (click)="cerrarSesion()">
+            Salir
+          </button>
+        </div>
+
+      </header>
+
+      <main class="page-container">
+        <router-outlet></router-outlet>
+      </main>
+
+    </section>
+
+  </div>
+
+</ng-template>

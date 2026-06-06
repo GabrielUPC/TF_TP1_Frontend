@@ -1,0 +1,255 @@
+<div class="usuarios-page">
+
+  <div class="page-title">
+    <div>
+      <h2>Gestión de usuarios y permisos</h2>
+      <p>
+        Administre usuarios, roles, IPRESS asignadas y permisos de acceso a la plataforma.
+      </p>
+    </div>
+
+    <button class="btn-primary-ipress" (click)="mostrarFormulario = !mostrarFormulario">
+      {{ mostrarFormulario ? 'Ocultar formulario' : '+ Crear usuario' }}
+    </button>
+  </div>
+
+  <div class="contenido-grid">
+
+    <section class="usuarios-main">
+
+      <div class="resumen-grid">
+
+        <article class="resumen-card">
+          <span>Total usuarios</span>
+          <strong>{{ usuarios.length }}</strong>
+        </article>
+
+        <article class="resumen-card">
+          <span>Usuarios activos</span>
+          <strong>{{ contarActivos() }}</strong>
+        </article>
+
+        <article class="resumen-card">
+          <span>Usuarios inactivos</span>
+          <strong>{{ contarInactivos() }}</strong>
+        </article>
+
+      </div>
+
+      <div class="filtros-card">
+
+        <div class="filtro-busqueda">
+          <span>🔎</span>
+          <input
+            type="text"
+            [(ngModel)]="filtroTexto"
+            (input)="aplicarFiltros()"
+            placeholder="Buscar por nombre, correo, rol o IPRESS">
+        </div>
+
+        <select [(ngModel)]="filtroRol" (change)="aplicarFiltros()">
+          <option value="TODOS">Todos los roles</option>
+          <option *ngFor="let rol of roles" [value]="rol.nombreRol">
+            {{ rol.nombreRol }}
+          </option>
+        </select>
+
+        <select [(ngModel)]="filtroIpress" (change)="aplicarFiltros()">
+          <option value="TODAS">Todas las IPRESS</option>
+          <option *ngFor="let item of ipress" [value]="item.nombreIpress">
+            {{ item.nombreIpress }}
+          </option>
+        </select>
+
+        <select [(ngModel)]="filtroEstado" (change)="aplicarFiltros()">
+          <option value="TODOS">Todos</option>
+          <option value="ACTIVO">Activos</option>
+          <option value="INACTIVO">Inactivos</option>
+        </select>
+
+        <button class="btn-light-ipress" (click)="limpiarFiltros()">
+          Filtros
+        </button>
+
+      </div>
+
+      <div *ngIf="cargando" class="estado-box">
+        Cargando usuarios...
+      </div>
+
+      <div *ngIf="error" class="error-box">
+        {{ error }}
+      </div>
+
+      <div *ngIf="mensaje" class="success-box">
+        {{ mensaje }}
+      </div>
+
+      <section *ngIf="!cargando" class="tabla-card">
+
+        <div class="tabla-header">
+          <div>
+            <h3>Usuarios registrados</h3>
+            <p>Mostrando {{ usuariosFiltrados.length }} de {{ usuarios.length }} usuarios</p>
+          </div>
+        </div>
+
+        <div *ngIf="usuariosFiltrados.length === 0" class="empty-box">
+          No existen usuarios registrados o no hay coincidencias con los filtros aplicados.
+        </div>
+
+        <div class="table-responsive" *ngIf="usuariosFiltrados.length > 0">
+
+          <table class="tabla-usuarios">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo institucional</th>
+                <th>Rol</th>
+                <th>IPRESS asignada</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let usuario of usuariosFiltrados">
+
+                <td>
+                  <div class="usuario-info">
+                    <div class="avatar-mini">
+                      {{ obtenerIniciales(usuario.nombre) }}
+                    </div>
+
+                    <strong>{{ usuario.nombre }}</strong>
+                  </div>
+                </td>
+
+                <td>{{ usuario.correo }}</td>
+
+                <td>{{ usuario.nombreRol || 'Sin rol' }}</td>
+
+                <td>{{ usuario.nombreIpress || 'Sin IPRESS asignada' }}</td>
+
+                <td>
+                  <span class="badge-estado" [ngClass]="obtenerClaseEstado(usuario.estado)">
+                    {{ usuario.estado ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="acciones">
+                    <button class="btn-action" title="Editar" (click)="editarUsuario(usuario)">✎</button>
+                    <button class="btn-action" [title]="usuario.estado ? 'Inactivar usuario' : 'Activar usuario'"
+                    (click)="cambiarEstadoUsuario(usuario)">  {{ usuario.estado ? '⏻' : '✓' }}</button>
+                    <button class="btn-action danger" title="Eliminar" (click)="eliminarUsuario(usuario)">
+                      🗑
+                    </button>
+                  </div>
+                </td>
+
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+
+      </section>
+
+      <div class="nota-info">
+        <strong>Importante:</strong>
+        El acceso a la información depende del rol y de la IPRESS asignada.
+      </div>
+
+    </section>
+
+    <aside class="form-panel" *ngIf="mostrarFormulario">
+
+      <div class="form-header">
+        <h3>{{ modoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}</h3>
+        <button (click)="mostrarFormulario = false">×</button>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre completo <span>*</span></label>
+        <input
+          type="text"
+          [(ngModel)]="nuevoUsuario.nombre"
+          placeholder="Ingrese el nombre completo">
+      </div>
+
+      <div class="form-group">
+        <label>Correo institucional <span>*</span></label>
+        <input
+          type="email"
+          [(ngModel)]="nuevoUsuario.correo"
+          placeholder="ejemplo@ipress.gob.pe">
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña temporal <span>*</span></label>
+        <input
+            type="password"
+            [(ngModel)]="nuevoUsuario.contrasena"
+            [placeholder]="modoEdicion ? 'Dejar vacío para mantener la contraseña actual' : 'Ingrese una contraseña temporal'">
+      </div>
+
+      <div class="form-group">
+        <label>Rol <span>*</span></label>
+        <select [(ngModel)]="nuevoUsuario.idRol">
+          <option [ngValue]="null">Seleccione un rol</option>
+          <option *ngFor="let rol of roles" [ngValue]="rol.idRol">
+            {{ rol.nombreRol }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>IPRESS asignada</label>
+        <select [(ngModel)]="nuevoUsuario.idIpress">
+          <option [ngValue]="null">Sin IPRESS asignada</option>
+          <option *ngFor="let item of ipress" [ngValue]="item.idIpress">
+            {{ item.nombreIpress }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Estado <span>*</span></label>
+        <select [(ngModel)]="nuevoUsuario.estado">
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="form-info">
+        <div>i</div>
+        <p>
+          El acceso a la información depende del rol y de la IPRESS asignada.
+        </p>
+      </div>
+
+      <button class="btn-save" (click)="guardarUsuario()" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : (modoEdicion ? 'Actualizar usuario' : 'Guardar usuario') }}
+      </button>
+
+      <button class="btn-cancel" (click)="limpiarFormulario()">
+        Cancelar
+      </button>
+
+      <div class="roles-box">
+        <h4>Roles disponibles</h4>
+
+        <ul>
+          <li *ngFor="let rol of roles">
+            <span>▣</span>
+            {{ rol.nombreRol }}
+          </li>
+        </ul>
+      </div>
+
+    </aside>
+
+  </div>
+
+</div>

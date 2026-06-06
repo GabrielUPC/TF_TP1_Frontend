@@ -6,13 +6,14 @@
 }
 
 /* Sidebar */
+
 .sidebar {
-  width: 280px;
-  background: linear-gradient(180deg, #0f3d5e 0%, #082236 100%);
+  width: 250px;
+  background: linear-gradient(180deg, #062b5f 0%, #021b3f 100%);
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  padding: 24px 18px;
+  padding: 18px 14px;
   position: fixed;
   top: 0;
   bottom: 0;
@@ -22,176 +23,204 @@
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding-bottom: 26px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  gap: 12px;
+  padding: 8px 8px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.logo-circle {
-  width: 48px;
-  height: 48px;
+.logo-icon {
+  width: 46px;
+  height: 46px;
   border-radius: 14px;
-  background: #2ec4b6;
-  color: #062135;
+  background: #ffffff;
+  color: #0057c8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  font-weight: 900;
 }
 
 .sidebar-header h5 {
   margin: 0;
-  font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 800;
 }
 
-.sidebar-header span {
-  font-size: 12px;
-  color: #b9d5e8;
+.sidebar-header strong {
+  display: block;
+  font-size: 16px;
+  color: #d9ecff;
 }
 
 .sidebar-menu {
-  margin-top: 28px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .menu-item {
-  color: #d8e8f2;
+  color: #dceaff;
   text-decoration: none;
   padding: 13px 14px;
-  border-radius: 12px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: all 0.2s ease;
-  font-weight: 500;
+  transition: 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
 .menu-item.active {
-  background: #ffffff;
-  color: #0f3d5e;
-  font-weight: 700;
+  background: #0066e6;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 102, 230, 0.25);
+}
+
+.menu-item.disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .menu-icon {
-  width: 26px;
+  width: 24px;
   text-align: center;
+  font-size: 17px;
 }
 
-.sidebar-footer {
-  margin-top: auto;
-  padding: 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+/* Main */
 
-.sidebar-footer small {
-  color: #b9d5e8;
-}
-
-.sidebar-footer strong {
-  font-size: 13px;
-}
-
-/* Main content */
 .main-content {
-  margin-left: 280px;
-  width: calc(100% - 280px);
+  margin-left: 250px;
+  width: calc(100% - 250px);
   min-height: 100vh;
 }
 
 .topbar {
-  height: 92px;
+  height: 72px;
   background: #ffffff;
   border-bottom: 1px solid #e5edf5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 34px;
+  padding: 0 28px;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
-.topbar h4 {
-  margin: 0;
+.brand-ipress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   color: #102a43;
+}
+
+.hospital-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid #cfe0f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0057c8;
+  font-size: 22px;
+}
+
+.brand-ipress span {
+  display: block;
+  color: #35658f;
+  font-size: 13px;
   font-weight: 700;
 }
 
-.topbar p {
-  margin: 4px 0 0;
-  color: #6b7c93;
-  font-size: 14px;
+.brand-ipress strong {
+  display: block;
+  color: #062b5f;
+  font-size: 15px;
 }
 
 .user-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #f4f7fb;
-  padding: 10px 14px;
-  border-radius: 14px;
 }
 
 .user-avatar {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: #0f3d5e;
+  background: linear-gradient(135deg, #0066e6 0%, #003e9a 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .user-card strong {
   display: block;
-  font-size: 14px;
   color: #102a43;
+  font-size: 14px;
 }
 
 .user-card span {
   display: block;
-  font-size: 12px;
   color: #6b7c93;
+  font-size: 12px;
+}
+
+.btn-logout {
+  border: 1px solid #d8e6f0;
+  background: #ffffff;
+  color: #062b5f;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background: #eef6fb;
 }
 
 .page-container {
-  padding: 30px 34px;
+  padding: 28px;
 }
 
-/* Responsive */
 @media (max-width: 900px) {
   .sidebar {
-    width: 90px;
-    padding: 20px 10px;
+    width: 86px;
+    padding: 18px 10px;
   }
 
-  .sidebar-header div:not(.logo-circle),
-  .menu-item:not(.active),
-  .sidebar-footer {
+  .sidebar-header div:not(.logo-icon),
+  .menu-item {
     font-size: 0;
   }
 
+  .menu-icon {
+    font-size: 20px;
+  }
+
   .main-content {
-    margin-left: 90px;
-    width: calc(100% - 90px);
+    margin-left: 86px;
+    width: calc(100% - 86px);
   }
 
   .topbar {
-    padding: 0 20px;
+    padding: 0 18px;
+  }
+
+  .brand-ipress div:last-child {
+    display: none;
   }
 }

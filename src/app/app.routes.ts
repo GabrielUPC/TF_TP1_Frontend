@@ -1,4 +1,8 @@
 import { Routes } from '@angular/router';
+
+import { LoginComponent } from './components/login/login.component';
+import { RecuperarPasswordComponent } from './components/recuperar-password/recuperar-password.component';
+import { UsuariosComponent } from './components/usuarios/usuarios.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { CargaExcelComponent } from './components/carga-excel/carga-excel.component';
 import { ArchivosComponent } from './components/archivos/archivos.component';
@@ -8,8 +12,16 @@ import { ReportesComponent } from './components/reportes/reportes.component';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
+    redirectTo: 'login',
     pathMatch: 'full'
+  },
+  {
+    path: 'login',
+    component: LoginComponent
+  },
+  {
+    path: 'recuperar-password',
+    component: RecuperarPasswordComponent
   },
   {
     path: 'dashboard',
@@ -32,7 +44,11 @@ export const routes: Routes = [
     component: ReportesComponent
   },
   {
+    path: 'usuarios',
+    component: UsuariosComponent
+  },
+  {
     path: '**',
-    redirectTo: 'dashboard'
+    redirectTo: 'login'
   }
 ];
