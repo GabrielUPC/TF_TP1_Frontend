@@ -142,9 +142,6 @@
                     <button class="btn-action" title="Editar" (click)="editarUsuario(usuario)">✎</button>
                     <button class="btn-action" [title]="usuario.estado ? 'Inactivar usuario' : 'Activar usuario'"
                     (click)="cambiarEstadoUsuario(usuario)">  {{ usuario.estado ? '⏻' : '✓' }}</button>
-                    <button class="btn-action danger" title="Eliminar" (click)="eliminarUsuario(usuario)">
-                      🗑
-                    </button>
                   </div>
                 </td>
 

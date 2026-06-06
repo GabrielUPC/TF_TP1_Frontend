@@ -33,10 +33,6 @@ export class UsuarioService {
     return this.http.put<void>(this.usuariosUrl, usuario);
   }
 
-  eliminarUsuario(idUsuario: number): Observable<void> {
-    return this.http.delete<void>(`${this.usuariosUrl}/${idUsuario}`);
-  }
-
   listarRoles(): Observable<Rol[]> {
     return this.http.get<Rol[]>(this.rolesUrl);
   }

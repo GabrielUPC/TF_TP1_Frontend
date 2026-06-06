@@ -50,40 +50,39 @@ export class UsuariosComponent implements OnInit {
   }
 
   cargarDatos(): void {
-    this.cargando = true;
-    this.error = '';
-    this.mensaje = '';
+  this.cargando = true;
+  this.error = '';
 
-    this.usuarioService.listarUsuarios().subscribe({
-      next: (usuarios) => {
-        this.usuarios = usuarios;
-        this.usuariosFiltrados = usuarios;
-        this.cargando = false;
-      },
-      error: (error) => {
-        console.error('Error al cargar usuarios:', error);
-        this.error = 'No se pudieron cargar los usuarios. Verifica que el backend esté activo.';
-        this.cargando = false;
-      }
-    });
+  this.usuarioService.listarUsuarios().subscribe({
+    next: (usuarios) => {
+      this.usuarios = usuarios;
+      this.usuariosFiltrados = usuarios;
+      this.cargando = false;
+    },
+    error: (error) => {
+      console.error('Error al cargar usuarios:', error);
+      this.error = 'No se pudieron cargar los usuarios. Verifica que el backend esté activo.';
+      this.cargando = false;
+    }
+  });
 
-    this.usuarioService.listarRoles().subscribe({
-      next: (roles) => {
-        this.roles = roles;
-      },
-      error: (error) => {
-        console.error('Error al cargar roles:', error);
-      }
-    });
+  this.usuarioService.listarRoles().subscribe({
+    next: (roles) => {
+      this.roles = roles;
+    },
+    error: (error) => {
+      console.error('Error al cargar roles:', error);
+    }
+  });
 
-    this.usuarioService.listarIpress().subscribe({
-      next: (ipress) => {
-        this.ipress = ipress;
-      },
-      error: (error) => {
-        console.error('Error al cargar IPRESS:', error);
-      }
-    });
+  this.usuarioService.listarIpress().subscribe({
+    next: (ipress) => {
+      this.ipress = ipress;
+    },
+    error: (error) => {
+      console.error('Error al cargar IPRESS:', error);
+    }
+  });
   }
 
   aplicarFiltros(): void {
@@ -205,24 +204,6 @@ export class UsuariosComponent implements OnInit {
   });
 }
 
-  eliminarUsuario(usuario: Usuario): void {
-    const confirmar = confirm(`¿Deseas eliminar al usuario ${usuario.nombre}?`);
-
-    if (!confirmar) {
-      return;
-    }
-
-    this.usuarioService.eliminarUsuario(usuario.idUsuario).subscribe({
-      next: () => {
-        this.mensaje = 'Usuario eliminado correctamente.';
-        this.cargarDatos();
-      },
-      error: (error) => {
-        console.error('Error al eliminar usuario:', error);
-        this.error = 'No se pudo eliminar el usuario.';
-      }
-    });
-  }
 
   limpiarFormulario(): void {
   this.modoEdicion = false;
