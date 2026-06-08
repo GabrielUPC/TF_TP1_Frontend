@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { JwtHelperService } from '@auth0/angular-jwt';
+
+import { environment } from '../../environment';
 import { SesionUsuario } from '../models/sesion-usuario';
+import { AuthResponse } from '../models/auth-response';
 
 @Injectable({
   providedIn: 'root'
@@ -7,49 +13,36 @@ import { SesionUsuario } from '../models/sesion-usuario';
 export class AuthService {
 
   private storageKey = 'usuario_ipress';
+  private jwtHelper = new JwtHelperService();
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  loginDemo(correo: string, contrasena: string): boolean {
-    if (!correo || !contrasena) {
-      return false;
-    }
+  login(correo: string, contrasena: string): Observable<SesionUsuario> {
+    return this.http.post<AuthResponse>(`${environment.base}/login`, {
+      correo,
+      contrasena
+    }).pipe(
+      map((response) => {
+        const sesion: SesionUsuario = {
+          jwttoken: response.jwttoken,
+          idUsuario: response.idUsuario,
+          nombre: response.nombre,
+          correo: response.correo,
+          rol: response.rol,
+          nombreRol: this.obtenerNombreRol(response.rol),
+          idIpress: response.idIpress,
+          nombreIpress: response.nombreIpress,
+          ipressAsignada: response.nombreIpress
+        };
 
-    let usuario: SesionUsuario;
-
-    if (correo.toLowerCase().includes('admin')) {
-      usuario = {
-        nombre: 'María Elena Vargas',
-        correo: correo,
-        rol: 'ADMINISTRADOR',
-        nombreRol: 'Administrador de la plataforma',
-        ipressAsignada: 'IPRESS asociadas: 5'
-      };
-    } else if (correo.toLowerCase().includes('admision')) {
-      usuario = {
-        nombre: 'Carla Mendoza Rojas',
-        correo: correo,
-        rol: 'ADMISION_REGISTROS',
-        nombreRol: 'Responsable de información hospitalaria',
-        ipressAsignada: 'Hospital Nacional Sergio E. Bernales'
-      };
-    } else {
-      usuario = {
-        nombre: 'María Elena Vargas',
-        correo: correo,
-        rol: 'ATENCION_HOSPITALIZACION',
-        nombreRol: 'Responsable de gestión hospitalaria',
-        ipressAsignada: 'Hospital Nacional Sergio E. Bernales'
-      };
-    }
-
-    localStorage.setItem(this.storageKey, JSON.stringify(usuario));
-
-    return true;
+        sessionStorage.setItem(this.storageKey, JSON.stringify(sesion));
+        return sesion;
+      })
+    );
   }
 
   obtenerUsuarioActual(): SesionUsuario | null {
-    const data = localStorage.getItem(this.storageKey);
+    const data = sessionStorage.getItem(this.storageKey);
 
     if (!data) {
       return null;
@@ -58,21 +51,39 @@ export class AuthService {
     return JSON.parse(data) as SesionUsuario;
   }
 
+  obtenerToken(): string | null {
+    return this.obtenerUsuarioActual()?.jwttoken ?? null;
+  }
+
   estaAutenticado(): boolean {
-    return this.obtenerUsuarioActual() !== null;
+    const token = this.obtenerToken();
+
+    if (!token) {
+      return false;
+    }
+
+    return !this.jwtHelper.isTokenExpired(token);
   }
 
   cerrarSesion(): void {
-    localStorage.removeItem(this.storageKey);
+    sessionStorage.removeItem(this.storageKey);
   }
 
   tieneRol(rol: string): boolean {
     const usuario = this.obtenerUsuarioActual();
+    return usuario?.rol === rol;
+  }
 
-    if (!usuario) {
-      return false;
+  private obtenerNombreRol(rol: string): string {
+    switch (rol) {
+      case 'ADMINISTRADOR':
+        return 'Administrador de la plataforma';
+      case 'ADMISION_REGISTROS':
+        return 'Responsable de información hospitalaria';
+      case 'ATENCION_HOSPITALIZACION':
+        return 'Responsable de gestión hospitalaria';
+      default:
+        return rol;
     }
-
-    return usuario.rol === rol;
   }
 }

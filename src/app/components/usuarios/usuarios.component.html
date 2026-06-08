@@ -140,9 +140,9 @@
                 <td>
                   <div class="acciones">
                     <button class="btn-action" title="Editar" (click)="editarUsuario(usuario)">✎</button>
-                    <button class="btn-action" [title]="usuario.estado ? 'Inactivar usuario' : 'Activar usuario'"
-                    (click)="cambiarEstadoUsuario(usuario)">  {{ usuario.estado ? '⏻' : '✓' }}</button>
-                  </div>
+                    <button class="btn-action" *ngIf="!esUsuarioActual(usuario)" type="button" (click)="cambiarEstadoUsuario(usuario)">
+                    {{ usuario.estado ? '⏻' : '✓' }}</button>  
+                </div>
                 </td>
 
               </tr>

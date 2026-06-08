@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-
+import { authGuard } from './guards/auth.guard';
 import { LoginComponent } from './components/login/login.component';
 import { RecuperarPasswordComponent } from './components/recuperar-password/recuperar-password.component';
 import { UsuariosComponent } from './components/usuarios/usuarios.component';
@@ -8,7 +8,7 @@ import { CargaExcelComponent } from './components/carga-excel/carga-excel.compon
 import { ArchivosComponent } from './components/archivos/archivos.component';
 import { AlertasComponent } from './components/alertas/alertas.component';
 import { ReportesComponent } from './components/reportes/reportes.component';
-
+import { roleGuard } from './guards/role.guard';
 export const routes: Routes = [
   {
     path: '',
@@ -24,31 +24,39 @@ export const routes: Routes = [
     component: RecuperarPasswordComponent
   },
   {
-    path: 'dashboard',
-    component: DashboardComponent
-  },
-  {
-    path: 'carga-excel',
-    component: CargaExcelComponent
-  },
-  {
-    path: 'archivos',
-    component: ArchivosComponent
-  },
-  {
-    path: 'alertas',
-    component: AlertasComponent
-  },
-  {
-    path: 'reportes',
-    component: ReportesComponent
-  },
-  {
-    path: 'usuarios',
-    component: UsuariosComponent
-  },
-  {
-    path: '**',
-    redirectTo: 'login'
-  }
+  path: 'dashboard',
+  component: DashboardComponent,
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['ATENCION_HOSPITALIZACION', 'ADMINISTRADOR'] }
+},
+{
+  path: 'carga-excel',
+  component: CargaExcelComponent,
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['ADMISION_REGISTROS', 'ADMINISTRADOR'] }
+},
+{
+  path: 'archivos',
+  component: ArchivosComponent,
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['ADMISION_REGISTROS', 'ADMINISTRADOR'] }
+},
+{
+  path: 'alertas',
+  component: AlertasComponent,
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['ATENCION_HOSPITALIZACION', 'ADMINISTRADOR'] }
+},
+{
+  path: 'reportes',
+  component: ReportesComponent,
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['ATENCION_HOSPITALIZACION', 'ADMINISTRADOR'] }
+},
+{
+  path: 'usuarios',
+  component: UsuariosComponent,
+  canActivate: [authGuard, roleGuard],
+  data: { roles: ['ADMINISTRADOR'] }
+}
 ];

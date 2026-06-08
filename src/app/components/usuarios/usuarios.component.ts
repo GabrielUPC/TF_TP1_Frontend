@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
+import { AuthService } from '../../services/auth.service';
 import { UsuarioService } from '../../services/usuario.service';
 import { Usuario, UsuarioRegistro } from '../../models/usuario';
 import { Rol } from '../../models/rol';
@@ -43,12 +43,16 @@ export class UsuariosComponent implements OnInit {
     idIpress: null
   };
 
-  constructor(private usuarioService: UsuarioService) {}
+  constructor(private usuarioService: UsuarioService,
+  private authService: AuthService) {}
 
   ngOnInit(): void {
     this.cargarDatos();
   }
-
+  esUsuarioActual(usuario: Usuario): boolean {
+    const usuarioActual = this.authService.obtenerUsuarioActual();
+    return usuarioActual?.idUsuario === usuario.idUsuario;
+  }
   cargarDatos(): void {
   this.cargando = true;
   this.error = '';
@@ -244,37 +248,32 @@ export class UsuariosComponent implements OnInit {
   contarInactivos(): number {
     return this.usuarios.filter(usuario => !usuario.estado).length;
   }
-  cambiarEstadoUsuario(usuario: Usuario): void {
-  this.usuarioService.obtenerUsuarioPorId(usuario.idUsuario).subscribe({
-    next: (data) => {
-      const usuarioActualizado: UsuarioRegistro = {
-        idUsuario: data.idUsuario,
-        nombre: data.nombre,
-        correo: data.correo,
-        contrasena: '',
-        estado: !data.estado,
-        idRol: data.idRol,
-        idIpress: data.idIpress
-      };
+cambiarEstadoUsuario(usuario: Usuario): void {
+  this.error = '';
+  this.mensaje = '';
 
-      this.usuarioService.modificarUsuario(usuarioActualizado).subscribe({
-        next: () => {
-          this.mensaje = usuario.estado
-            ? 'Usuario inactivado correctamente.'
-            : 'Usuario activado correctamente.';
-
-          this.cargarDatos();
-        },
-        error: (error) => {
-          console.error('Error al cambiar estado:', error);
-          this.error = 'No se pudo cambiar el estado del usuario.';
-        }
-      });
-    },
-    error: (error) => {
-      console.error('Error al obtener usuario:', error);
-      this.error = 'No se pudo obtener el usuario seleccionado.';
-    }
-  });
+  if (usuario.estado) {
+    this.usuarioService.inactivarUsuario(usuario.idUsuario).subscribe({
+      next: () => {
+        this.mensaje = 'Usuario inactivado correctamente.';
+        this.cargarDatos();
+      },
+      error: (error) => {
+        console.error('Error al inactivar usuario:', error);
+        this.error = 'No se pudo inactivar el usuario.';
+      }
+    });
+  } else {
+    this.usuarioService.activarUsuario(usuario.idUsuario).subscribe({
+      next: () => {
+        this.mensaje = 'Usuario activado correctamente.';
+        this.cargarDatos();
+      },
+      error: (error) => {
+        console.error('Error al activar usuario:', error);
+        this.error = 'No se pudo activar el usuario.';
+      }
+    });
+  }
 }
 }

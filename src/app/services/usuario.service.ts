@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { environment } from '../../environment';
 import { Usuario, UsuarioRegistro } from '../models/usuario';
 import { Rol } from '../models/rol';
 import { Ipress } from '../models/ipress';
@@ -11,9 +12,9 @@ import { Ipress } from '../models/ipress';
 })
 export class UsuarioService {
 
-  private usuariosUrl = 'http://localhost:8080/usuarios';
-  private rolesUrl = 'http://localhost:8080/roles';
-  private ipressUrl = 'http://localhost:8080/ipress';
+  private usuariosUrl = `${environment.base}/usuarios`;
+  private rolesUrl = `${environment.base}/roles`;
+  private ipressUrl = `${environment.base}/ipress`;
 
   constructor(private http: HttpClient) {}
 
@@ -31,6 +32,14 @@ export class UsuarioService {
 
   modificarUsuario(usuario: UsuarioRegistro): Observable<void> {
     return this.http.put<void>(this.usuariosUrl, usuario);
+  }
+
+  activarUsuario(idUsuario: number): Observable<void> {
+    return this.http.put<void>(`${this.usuariosUrl}/${idUsuario}/activar`, null);
+  }
+
+  inactivarUsuario(idUsuario: number): Observable<void> {
+    return this.http.put<void>(`${this.usuariosUrl}/${idUsuario}/inactivar`, null);
   }
 
   listarRoles(): Observable<Rol[]> {

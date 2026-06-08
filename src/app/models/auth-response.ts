@@ -1,11 +1,9 @@
-export interface SesionUsuario {
+export interface AuthResponse {
   jwttoken: string;
   idUsuario: number;
   nombre: string;
   correo: string;
   rol: string;
-  nombreRol: string;
   idIpress: number | null;
   nombreIpress: string;
-  ipressAsignada: string;
 }

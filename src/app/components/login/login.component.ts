@@ -24,22 +24,22 @@ export class LoginComponent {
   ) {}
 
   iniciarSesion(): void {
-    this.error = '';
+  this.error = '';
 
-    if (!this.correo || !this.contrasena) {
-      this.error = 'Ingresa tu correo institucional y contraseña.';
-      return;
-    }
-
-    const accesoValido = this.authService.loginDemo(this.correo, this.contrasena);
-
-    if (!accesoValido) {
-      this.error = 'Credenciales inválidas.';
-      return;
-    }
-
-    this.router.navigate(['/dashboard']);
+  if (!this.correo || !this.contrasena) {
+    this.error = 'Ingresa tu correo institucional y contraseña.';
+    return;
   }
+
+  this.authService.login(this.correo, this.contrasena).subscribe({
+    next: () => {
+      this.router.navigate(['/dashboard']);
+    },
+    error: () => {
+      this.error = 'Credenciales inválidas o usuario inactivo.';
+    }
+  });
+}
 
   alternarContrasena(): void {
     this.mostrarContrasena = !this.mostrarContrasena;
