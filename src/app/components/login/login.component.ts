@@ -32,8 +32,16 @@ export class LoginComponent {
   }
 
   this.authService.login(this.correo, this.contrasena).subscribe({
-    next: () => {
-      this.router.navigate(['/dashboard']);
+    next: (usuario) => {
+      if (usuario.rol === 'ADMINISTRADOR') {
+        this.router.navigate(['/usuarios']);
+      } else if (usuario.rol === 'ADMISION_REGISTROS') {
+        this.router.navigate(['/carga-excel']);
+      } else if (usuario.rol === 'ATENCION_HOSPITALIZACION') {
+        this.router.navigate(['/dashboard']);
+      } else {
+        this.router.navigate(['/login']);
+      }
     },
     error: () => {
       this.error = 'Credenciales inválidas o usuario inactivo.';

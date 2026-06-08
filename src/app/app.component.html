@@ -30,55 +30,35 @@
           Inicio
         </a>
 
-        <a
-          *ngIf="esHospitalizacion() || esAdmin()"
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          class="menu-item">
+        <a *ngIf="esHospitalizacion()" routerLink="/dashboard" routerLinkActive="active" class="menu-item">
           <span class="menu-icon">◔</span>
           Dashboard predictivo
         </a>
 
-        <a
-          *ngIf="esAdmision() || esAdmin()"
-          routerLink="/carga-excel"
-          routerLinkActive="active"
-          class="menu-item">
+        <a *ngIf="esAdmision()" routerLink="/carga-excel" routerLinkActive="active" class="menu-item">
           <span class="menu-icon">▣</span>
           Datos
         </a>
 
-        <a
-          *ngIf="esAdmision()"
-          routerLink="/archivos"
-          routerLinkActive="active"
-          class="menu-item">
+        <a *ngIf="esAdmision()" routerLink="/archivos" routerLinkActive="active" class="menu-item">
           <span class="menu-icon">▤</span>
           Historial
         </a>
 
-        <a
-          *ngIf="esHospitalizacion() || esAdmin()"
-          routerLink="/alertas"
-          routerLinkActive="active"
-          class="menu-item">
+        <a *ngIf="esHospitalizacion()" routerLink="/alertas" routerLinkActive="active" class="menu-item">
           <span class="menu-icon">⚠</span>
           Alertas
         </a>
 
-        <a
-          *ngIf="esHospitalizacion() || esAdmin()"
-          routerLink="/reportes"
-          routerLinkActive="active"
-          class="menu-item">
+        <a *ngIf="esHospitalizacion()" routerLink="/reportes" routerLinkActive="active" class="menu-item">
           <span class="menu-icon">▦</span>
           Reportes
         </a>
 
-        <a *ngIf="esAdmin()" routerLink="/usuarios"  routerLinkActive="active" class="menu-item">
-        <span class="menu-icon">👥</span>
-        Usuarios </a>
-
+        <a *ngIf="esAdmin()" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+          <span class="menu-icon">👥</span>
+          Usuarios
+        </a>
         <a class="menu-item disabled">
           <span class="menu-icon">⚙</span>
           Configuración
