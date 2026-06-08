@@ -1,0 +1,64 @@
+<section class="admin-home">
+  <header class="welcome-card">
+    <div>
+      <span class="eyebrow">Panel administrativo</span>
+      <h1>
+        Bienvenido, {{ authService.obtenerUsuarioActual()?.nombre || 'Administrador' }}
+      </h1>
+      <p>
+        Supervisa el acceso a la plataforma y administra las cuentas de los usuarios.
+      </p>
+    </div>
+
+    <a routerLink="/usuarios" class="primary-action">
+      Gestionar usuarios
+    </a>
+  </header>
+
+  <div class="summary-grid">
+    <article class="summary-card">
+      <div class="card-icon">👥</div>
+      <div>
+        <span>Administración</span>
+        <h2>Usuarios y permisos</h2>
+        <p>
+          Registra usuarios, asigna roles e IPRESS y controla el estado de sus accesos.
+        </p>
+        <a routerLink="/usuarios">Ir a usuarios</a>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <div class="card-icon">✓</div>
+      <div>
+        <span>Sesión actual</span>
+        <h2>{{ authService.obtenerUsuarioActual()?.nombreRol || 'Administrador' }}</h2>
+        <p>
+          Tu sesión está activa y dispone de permisos de administración de la plataforma.
+        </p>
+      </div>
+    </article>
+  </div>
+
+  <section class="info-panel">
+    <div>
+      <span class="eyebrow">Acceso rápido</span>
+      <h2>¿Qué puedes hacer desde aquí?</h2>
+    </div>
+
+    <div class="features">
+      <div>
+        <strong>Crear cuentas</strong>
+        <span>Registra nuevos usuarios con sus datos institucionales.</span>
+      </div>
+      <div>
+        <strong>Asignar permisos</strong>
+        <span>Define el rol y la IPRESS correspondiente a cada usuario.</span>
+      </div>
+      <div>
+        <strong>Controlar accesos</strong>
+        <span>Activa, inactiva y actualiza las cuentas registradas.</span>
+      </div>
+    </div>
+  </section>
+</section>

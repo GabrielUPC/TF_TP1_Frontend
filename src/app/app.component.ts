@@ -21,7 +21,8 @@ export class AppComponent {
   ) {}
 
   esRutaAuth(): boolean {
-    return this.router.url.includes('/login') || this.router.url.includes('/recuperar-password');
+    const rutaActual = this.router.url.split(/[?#]/)[0];
+    return rutaActual === '/login' || rutaActual === '/recuperar-password';
   }
 
   obtenerUsuario(): SesionUsuario | null {

@@ -22,8 +22,17 @@
       <nav class="sidebar-menu">
 
         <a
-          *ngIf="esHospitalizacion() || esAdmin()"
+          *ngIf="esHospitalizacion()"
           routerLink="/dashboard"
+          routerLinkActive="active"
+          class="menu-item">
+          <span class="menu-icon">⌂</span>
+          Inicio
+        </a>
+
+        <a
+          *ngIf="esAdmin()"
+          routerLink="/inicio"
           routerLinkActive="active"
           class="menu-item">
           <span class="menu-icon">⌂</span>
@@ -59,7 +68,10 @@
           <span class="menu-icon">👥</span>
           Usuarios
         </a>
-        <a class="menu-item disabled">
+        <a
+          routerLink="/configuracion"
+          routerLinkActive="active"
+          class="menu-item">
           <span class="menu-icon">⚙</span>
           Configuración
         </a>

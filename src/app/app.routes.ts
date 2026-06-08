@@ -8,7 +8,10 @@ import { CargaExcelComponent } from './components/carga-excel/carga-excel.compon
 import { ArchivosComponent } from './components/archivos/archivos.component';
 import { AlertasComponent } from './components/alertas/alertas.component';
 import { ReportesComponent } from './components/reportes/reportes.component';
+import { InicioAdminComponent } from './components/inicio-admin/inicio-admin.component';
+import { ConfiguracionComponent } from './components/configuracion/configuracion.component';
 import { roleGuard } from './guards/role.guard';
+
 export const routes: Routes = [
   {
     path: '',
@@ -24,10 +27,16 @@ export const routes: Routes = [
     component: RecuperarPasswordComponent
   },
   {
-  path: 'dashboard',
-  component: DashboardComponent,
-  canActivate: [authGuard, roleGuard],
-  data: { roles: ['ATENCION_HOSPITALIZACION'] }
+    path: 'inicio',
+    component: InicioAdminComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMINISTRADOR'] }
+  },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ATENCION_HOSPITALIZACION'] }
   },
   {
     path: 'carga-excel',
@@ -58,5 +67,21 @@ export const routes: Routes = [
     component: UsuariosComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMINISTRADOR'] }
+  },
+  {
+    path: 'configuracion',
+    component: ConfiguracionComponent,
+    canActivate: [authGuard, roleGuard],
+    data: {
+      roles: [
+        'ADMINISTRADOR',
+        'ADMISION_REGISTROS',
+        'ATENCION_HOSPITALIZACION'
+      ]
+    }
+  },
+  {
+    path: '**',
+    redirectTo: 'login'
   }
 ];

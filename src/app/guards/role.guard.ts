@@ -9,8 +9,7 @@ export const roleGuard: CanActivateFn = (route) => {
   const usuario = authService.obtenerUsuarioActual();
 
   if (!usuario || !authService.estaAutenticado()) {
-    router.navigate(['/login']);
-    return false;
+    return router.createUrlTree(['/login']);
   }
 
   const rolesPermitidos = route.data?.['roles'] as string[];
@@ -23,6 +22,7 @@ export const roleGuard: CanActivateFn = (route) => {
     return true;
   }
 
-  router.navigate(['/dashboard']);
-  return false;
+  const rutaInicial = authService.obtenerRutaInicial(usuario.rol);
+
+  return router.createUrlTree([rutaInicial ?? '/login']);
 };

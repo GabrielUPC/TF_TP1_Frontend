@@ -12,8 +12,8 @@ import { AuthResponse } from '../models/auth-response';
 })
 export class AuthService {
 
-  private storageKey = 'usuario_ipress';
-  private jwtHelper = new JwtHelperService();
+  private readonly storageKey = 'usuario_ipress';
+  private readonly jwtHelper = new JwtHelperService();
 
   constructor(private http: HttpClient) {}
 
@@ -48,7 +48,12 @@ export class AuthService {
       return null;
     }
 
-    return JSON.parse(data) as SesionUsuario;
+    try {
+      return JSON.parse(data) as SesionUsuario;
+    } catch {
+      this.cerrarSesion();
+      return null;
+    }
   }
 
   obtenerToken(): string | null {
@@ -62,7 +67,18 @@ export class AuthService {
       return false;
     }
 
-    return !this.jwtHelper.isTokenExpired(token);
+    try {
+      const estaVigente = !this.jwtHelper.isTokenExpired(token);
+
+      if (!estaVigente) {
+        this.cerrarSesion();
+      }
+
+      return estaVigente;
+    } catch {
+      this.cerrarSesion();
+      return false;
+    }
   }
 
   cerrarSesion(): void {
@@ -72,6 +88,19 @@ export class AuthService {
   tieneRol(rol: string): boolean {
     const usuario = this.obtenerUsuarioActual();
     return usuario?.rol === rol;
+  }
+
+  obtenerRutaInicial(rol: string): string | null {
+    switch (rol) {
+      case 'ADMINISTRADOR':
+        return '/inicio';
+      case 'ADMISION_REGISTROS':
+        return '/carga-excel';
+      case 'ATENCION_HOSPITALIZACION':
+        return '/dashboard';
+      default:
+        return null;
+    }
   }
 
   private obtenerNombreRol(rol: string): string {

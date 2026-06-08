@@ -1,0 +1,92 @@
+<section class="config-page">
+  <header class="page-title">
+    <div>
+      <span class="eyebrow">Cuenta y acceso</span>
+      <h2>Configuración</h2>
+      <p>
+        Consulta tu perfil, el alcance de tu cuenta y los permisos habilitados.
+      </p>
+    </div>
+
+    <a
+      *ngIf="obtenerConfiguracionRol() as configuracion"
+      [routerLink]="configuracion.rutaPrincipal"
+      class="btn-primary-ipress">
+      {{ configuracion.accionPrincipal }}
+    </a>
+  </header>
+
+  <div class="config-grid">
+    <section class="profile-card">
+      <div class="profile-header">
+        <div class="avatar">
+          {{ obtenerUsuario()?.nombre?.charAt(0)?.toUpperCase() || 'U' }}
+        </div>
+
+        <div>
+          <span>Usuario autenticado</span>
+          <h3>{{ obtenerUsuario()?.nombre || 'Usuario' }}</h3>
+          <p>{{ obtenerUsuario()?.correo || 'Correo no disponible' }}</p>
+        </div>
+      </div>
+
+      <div class="profile-data">
+        <div>
+          <span>Rol asignado</span>
+          <strong>{{ obtenerUsuario()?.nombreRol || obtenerUsuario()?.rol || 'Sin rol' }}</strong>
+        </div>
+
+        <div>
+          <span>IPRESS / alcance</span>
+          <strong>{{ obtenerIpress() }}</strong>
+        </div>
+
+        <div>
+          <span>Estado de sesión</span>
+          <strong class="status-active">Activa</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="security-card">
+      <span class="card-label">Seguridad</span>
+      <h3>Acceso a la plataforma</h3>
+      <p>
+        La recuperación de contraseña está disponible únicamente para cuentas registradas
+        mediante el correo institucional.
+      </p>
+
+      <a routerLink="/recuperar-password" class="btn-secondary-ipress">
+        Recuperar contraseña
+      </a>
+    </section>
+  </div>
+
+  <section class="permissions-card" *ngIf="obtenerConfiguracionRol() as configuracion">
+    <div class="permissions-header">
+      <div>
+        <span class="card-label">Acceso por rol e IPRESS</span>
+        <h3>Permisos habilitados</h3>
+      </div>
+
+      <span class="role-badge">
+        {{ obtenerUsuario()?.rol }}
+      </span>
+    </div>
+
+    <p class="scope-text">{{ configuracion.alcance }}</p>
+
+    <div class="permissions-grid">
+      <div *ngFor="let permiso of configuracion.permisos" class="permission-item">
+        <span class="check-icon">✓</span>
+        <span>{{ permiso }}</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="oe2-note">
+    <strong>Control de acceso OE2:</strong>
+    las opciones y la información disponibles dependen del rol del usuario y de la
+    IPRESS asignada. Ningún usuario operativo puede consultar información de otra IPRESS.
+  </aside>
+</section>

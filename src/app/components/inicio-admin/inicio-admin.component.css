@@ -1,0 +1,162 @@
+.admin-home {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.welcome-card,
+.summary-card,
+.info-panel {
+  background: #ffffff;
+  border: 1px solid #e5edf5;
+  border-radius: 18px;
+  box-shadow: 0 8px 22px rgba(16, 42, 67, 0.06);
+}
+
+.welcome-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px;
+  background: linear-gradient(135deg, #ffffff 0%, #eef6ff 100%);
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #0066e6;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.welcome-card h1,
+.info-panel h2 {
+  margin: 0;
+  color: #062b5f;
+  font-weight: 900;
+}
+
+.welcome-card h1 {
+  font-size: 30px;
+}
+
+.welcome-card p,
+.summary-card p {
+  margin: 8px 0 0;
+  color: #52677f;
+  line-height: 1.6;
+}
+
+.primary-action {
+  flex-shrink: 0;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #0066e6;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.primary-action:hover {
+  background: #004bb7;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.summary-card {
+  display: flex;
+  gap: 16px;
+  padding: 22px;
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #e8f1ff;
+  color: #0066e6;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.summary-card span {
+  color: #6b7c93;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summary-card h2 {
+  margin: 4px 0 0;
+  color: #102a43;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.summary-card a {
+  display: inline-block;
+  margin-top: 14px;
+  color: #0066e6;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.info-panel {
+  padding: 24px;
+}
+
+.info-panel h2 {
+  font-size: 22px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.features div {
+  padding: 18px;
+  border: 1px solid #d8e6f0;
+  border-radius: 14px;
+  background: #f8fbfd;
+}
+
+.features strong,
+.features span {
+  display: block;
+}
+
+.features strong {
+  margin-bottom: 7px;
+  color: #062b5f;
+}
+
+.features span {
+  color: #52677f;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  .welcome-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summary-grid,
+  .features {
+    grid-template-columns: 1fr;
+  }
+}

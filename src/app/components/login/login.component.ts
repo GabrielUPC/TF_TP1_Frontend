@@ -24,30 +24,30 @@ export class LoginComponent {
   ) {}
 
   iniciarSesion(): void {
-  this.error = '';
+    this.error = '';
 
-  if (!this.correo || !this.contrasena) {
-    this.error = 'Ingresa tu correo institucional y contraseña.';
-    return;
-  }
-
-  this.authService.login(this.correo, this.contrasena).subscribe({
-    next: (usuario) => {
-      if (usuario.rol === 'ADMINISTRADOR') {
-        this.router.navigate(['/usuarios']);
-      } else if (usuario.rol === 'ADMISION_REGISTROS') {
-        this.router.navigate(['/carga-excel']);
-      } else if (usuario.rol === 'ATENCION_HOSPITALIZACION') {
-        this.router.navigate(['/dashboard']);
-      } else {
-        this.router.navigate(['/login']);
-      }
-    },
-    error: () => {
-      this.error = 'Credenciales inválidas o usuario inactivo.';
+    if (!this.correo || !this.contrasena) {
+      this.error = 'Ingresa tu correo institucional y contraseña.';
+      return;
     }
-  });
-}
+
+    this.authService.login(this.correo, this.contrasena).subscribe({
+      next: (usuario) => {
+        const rutaInicial = this.authService.obtenerRutaInicial(usuario.rol);
+
+        if (!rutaInicial) {
+          this.authService.cerrarSesion();
+          this.error = 'El usuario no tiene un rol autorizado.';
+          return;
+        }
+
+        this.router.navigateByUrl(rutaInicial);
+      },
+      error: () => {
+        this.error = 'Credenciales inválidas o usuario inactivo.';
+      }
+    });
+  }
 
   alternarContrasena(): void {
     this.mostrarContrasena = !this.mostrarContrasena;
