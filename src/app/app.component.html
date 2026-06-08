@@ -21,13 +21,17 @@
 
       <nav class="sidebar-menu">
 
-        <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+        <a
+          *ngIf="esHospitalizacion() || esAdmin()"
+          routerLink="/dashboard"
+          routerLinkActive="active"
+          class="menu-item">
           <span class="menu-icon">⌂</span>
           Inicio
         </a>
 
         <a
-          *ngIf="esHospitalizacion()"
+          *ngIf="esHospitalizacion() || esAdmin()"
           routerLink="/dashboard"
           routerLinkActive="active"
           class="menu-item">
@@ -36,7 +40,7 @@
         </a>
 
         <a
-          *ngIf="esAdmision()"
+          *ngIf="esAdmision() || esAdmin()"
           routerLink="/carga-excel"
           routerLinkActive="active"
           class="menu-item">
@@ -54,7 +58,7 @@
         </a>
 
         <a
-          *ngIf="esHospitalizacion()"
+          *ngIf="esHospitalizacion() || esAdmin()"
           routerLink="/alertas"
           routerLinkActive="active"
           class="menu-item">
@@ -62,7 +66,11 @@
           Alertas
         </a>
 
-        <a routerLink="/reportes" routerLinkActive="active" class="menu-item">
+        <a
+          *ngIf="esHospitalizacion() || esAdmin()"
+          routerLink="/reportes"
+          routerLinkActive="active"
+          class="menu-item">
           <span class="menu-icon">▦</span>
           Reportes
         </a>
