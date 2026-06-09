@@ -29,6 +29,16 @@ export class AppComponent {
     return this.authService.obtenerUsuarioActual();
   }
 
+  obtenerAlcanceUsuario(): string {
+    const usuario = this.obtenerUsuario();
+
+    if (usuario?.rol === 'ADMINISTRADOR') {
+      return 'Acceso administrativo general';
+    }
+
+    return usuario?.ipressAsignada || usuario?.nombreIpress || 'No asignada';
+  }
+
   cerrarSesion(): void {
     this.authService.cerrarSesion();
     this.router.navigate(['/login']);

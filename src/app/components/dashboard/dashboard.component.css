@@ -46,6 +46,77 @@
   font-size: 14px;
 }
 
+.filtros-card {
+  display: grid;
+  grid-template-columns: 160px 180px minmax(240px, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  background: #ffffff;
+  border: 1px solid #e5edf5;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 8px 22px rgba(16, 42, 67, 0.06);
+}
+
+.filtro-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.filtro-group label {
+  color: #334e68;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filtro-group select,
+.filtro-group input {
+  min-height: 42px;
+  border: 1px solid #d8e6f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #102a43;
+  background: #ffffff;
+  outline: none;
+}
+
+.filtro-group select:focus,
+.filtro-group input:focus {
+  border-color: #0f3d5e;
+}
+
+.filtros-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-filter,
+.btn-clear {
+  border: none;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-filter {
+  background: #0f3d5e;
+  color: #ffffff;
+}
+
+.btn-clear {
+  background: #eef6fb;
+  color: #0f3d5e;
+}
+
+.btn-filter:disabled,
+.btn-clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .estado-box {
   background: #ffffff;
   border: 1px solid #e5edf5;
@@ -263,6 +334,10 @@
 }
 
 @media (max-width: 1200px) {
+  .filtros-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .cards-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -277,6 +352,14 @@
 
   .cards-grid {
     grid-template-columns: 1fr;
+  }
+
+  .filtros-card {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros-actions {
+    flex-wrap: wrap;
   }
 
   .section-header {

@@ -22,15 +22,6 @@
       <nav class="sidebar-menu">
 
         <a
-          *ngIf="esHospitalizacion()"
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          class="menu-item">
-          <span class="menu-icon">⌂</span>
-          Inicio
-        </a>
-
-        <a
           *ngIf="esAdmin()"
           routerLink="/inicio"
           routerLinkActive="active"
@@ -88,7 +79,7 @@
           <div class="hospital-icon">▥</div>
           <div>
             <span>IPRESS asignada:</span>
-            <strong>{{ obtenerUsuario()?.ipressAsignada || 'No asignada' }}</strong>
+            <strong>{{ obtenerAlcanceUsuario() }}</strong>
           </div>
         </div>
 

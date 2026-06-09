@@ -86,35 +86,26 @@ button:disabled {
   font-weight: 800;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+.ipress-asignada {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #eef6fb;
+  border: 1px solid #d8e6f0;
+  border-radius: 14px;
+  padding: 14px 16px;
   margin-bottom: 18px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.form-group label {
+.ipress-asignada span {
   color: #334e68;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.form-group input {
-  border: 1px solid #d8e6f0;
-  border-radius: 12px;
-  padding: 11px 13px;
-  outline: none;
-  font-size: 14px;
-}
-
-.form-group input:focus {
-  border-color: #0f3d5e;
+.ipress-asignada strong {
+  color: #102a43;
+  font-size: 16px;
 }
 
 .upload-box {
@@ -267,7 +258,6 @@ button:disabled {
     gap: 12px;
   }
 
-  .form-grid,
   .resultado-grid {
     grid-template-columns: 1fr;
   }

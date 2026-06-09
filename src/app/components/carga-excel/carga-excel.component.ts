@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { ExcelHospitalarioService } from '../../services/excel-hospitalario.service';
 import { ResumenCargaExcel } from '../../models/resumen-carga-excel';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-carga-excel',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './carga-excel.component.html',
   styleUrl: './carga-excel.component.css'
 })
@@ -15,16 +15,21 @@ export class CargaExcelComponent {
 
   archivoSeleccionado: File | null = null;
 
-  idUsuario: number = 1;
-  idIpress: number = 1;
-
   cargando: boolean = false;
   descargando: boolean = false;
 
   error: string = '';
   resultado: ResumenCargaExcel | null = null;
 
-  constructor(private excelService: ExcelHospitalarioService) {}
+  constructor(
+    private excelService: ExcelHospitalarioService,
+    private authService: AuthService
+  ) {}
+
+  obtenerIpressAsignada(): string {
+    const usuario = this.authService.obtenerUsuarioActual();
+    return usuario?.ipressAsignada || usuario?.nombreIpress || 'No asignada';
+  }
 
   seleccionarArchivo(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -78,13 +83,15 @@ export class CargaExcelComponent {
       return;
     }
 
-    if (!this.idUsuario || this.idUsuario <= 0) {
-      this.error = 'Ingresa un idUsuario válido.';
+    const usuario = this.authService.obtenerUsuarioActual();
+
+    if (!usuario || usuario.idUsuario <= 0) {
+      this.error = 'No se encontró una sesión de usuario válida. Vuelve a iniciar sesión.';
       return;
     }
 
-    if (!this.idIpress || this.idIpress <= 0) {
-      this.error = 'Ingresa un idIpress válido.';
+    if (!usuario.idIpress || usuario.idIpress <= 0) {
+      this.error = 'Tu usuario no tiene una IPRESS asignada. Contacta al administrador.';
       return;
     }
 
@@ -94,8 +101,8 @@ export class CargaExcelComponent {
 
     this.excelService.cargarExcel(
       this.archivoSeleccionado,
-      this.idUsuario,
-      this.idIpress
+      usuario.idUsuario,
+      usuario.idIpress
     ).subscribe({
       next: (respuesta) => {
         this.resultado = respuesta;

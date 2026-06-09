@@ -19,6 +19,46 @@
     no asigna camas automáticamente y no representa disponibilidad en tiempo real.
   </div>
 
+  <section class="filtros-card">
+    <div class="filtro-group">
+      <label for="anioFiltro">Año</label>
+      <select id="anioFiltro" [(ngModel)]="anioFiltro">
+        <option [ngValue]="undefined">Todos</option>
+        <option *ngFor="let anio of aniosDisponibles" [ngValue]="anio">
+          {{ anio }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filtro-group">
+      <label for="mesFiltro">Mes</label>
+      <select id="mesFiltro" [(ngModel)]="mesFiltro">
+        <option [ngValue]="undefined">Todos</option>
+        <option *ngFor="let mes of meses" [ngValue]="mes.valor">
+          {{ mes.nombre }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filtro-group servicio">
+      <label for="servicioFiltro">Servicio hospitalario</label>
+      <input
+        id="servicioFiltro"
+        type="text"
+        [(ngModel)]="servicioFiltro"
+        placeholder="Ejemplo: Medicina interna">
+    </div>
+
+    <div class="filtros-actions">
+      <button class="btn-filter" (click)="filtrarDashboard()" [disabled]="cargando">
+        Filtrar
+      </button>
+      <button class="btn-clear" (click)="cargarDashboard()" [disabled]="cargando">
+        Limpiar
+      </button>
+    </div>
+  </section>
+
   <div *ngIf="cargando" class="estado-box">
     Cargando información del dashboard...
   </div>

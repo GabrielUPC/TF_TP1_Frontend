@@ -24,28 +24,9 @@
 
     <h3>Seleccionar archivo Excel</h3>
 
-    <div class="form-grid">
-
-      <div class="form-group">
-        <label for="idUsuario">ID Usuario</label>
-        <input
-          id="idUsuario"
-          type="number"
-          [(ngModel)]="idUsuario"
-          min="1"
-          placeholder="Ejemplo: 1">
-      </div>
-
-      <div class="form-group">
-        <label for="idIpress">ID IPRESS</label>
-        <input
-          id="idIpress"
-          type="number"
-          [(ngModel)]="idIpress"
-          min="1"
-          placeholder="Ejemplo: 1">
-      </div>
-
+    <div class="ipress-asignada">
+      <span>IPRESS asignada</span>
+      <strong>{{ obtenerIpressAsignada() }}</strong>
     </div>
 
     <div class="upload-box">
