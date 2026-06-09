@@ -85,9 +85,11 @@ export class DashboardComponent implements OnInit {
     ).subscribe({
       next: (data) => {
         this.detalle = data;
-        this.alertas = data.filter((item) =>
-          item.nivelRiesgo === 'MEDIO' || item.nivelRiesgo === 'ALTO'
-        );
+        this.alertas = data.filter((item) => {
+          const riesgo = item.nivelRiesgo?.toUpperCase();
+          return riesgo === 'MEDIO' || riesgo === 'ALTO';
+        });
+        this.resumen = this.construirResumenDesdeDetalle(data);
         this.cargando = false;
       },
       error: (error) => {
@@ -96,6 +98,122 @@ export class DashboardComponent implements OnInit {
         this.cargando = false;
       }
     });
+  }
+
+  private construirResumenDesdeDetalle(data: DashboardDetalle[]): DashboardResumen {
+    const totalPredicciones = data.length;
+
+    const totalRiesgoAlto = data.filter(
+      (item) => item.nivelRiesgo?.toUpperCase() === 'ALTO'
+    ).length;
+    const totalRiesgoMedio = data.filter(
+      (item) => item.nivelRiesgo?.toUpperCase() === 'MEDIO'
+    ).length;
+    const totalRiesgoBajo = data.filter(
+      (item) => item.nivelRiesgo?.toUpperCase() === 'BAJO'
+    ).length;
+
+    const promedioOcupacionEstimada = this.promedio(
+      data.map((item) => item.ocupacionEstimada)
+    );
+    const promedioPresionIngresosCamas = this.promedio(
+      data.map((item) => item.presionIngresosCamas)
+    );
+    const promedioProbabilidad = this.promedio(
+      data.map((item) => item.probabilidad)
+    );
+
+    const totalIngresos = this.sumar(data.map((item) => item.ingresos));
+    const totalEgresos = this.sumar(data.map((item) => item.egresos));
+    const totalEstancias = this.sumar(data.map((item) => item.estancias));
+    const totalPacientesCama = this.sumar(data.map((item) => item.pacientesCama));
+    const totalCamasDisponiblesHabilitadas = this.sumar(
+      data.map((item) => item.camasDisponiblesHabilitadas)
+    );
+
+    const nivelRiesgoPredominante = this.obtenerRiesgoPredominante(
+      totalRiesgoBajo,
+      totalRiesgoMedio,
+      totalRiesgoAlto
+    );
+
+    return {
+      totalPredicciones,
+      totalRiesgoBajo,
+      totalRiesgoMedio,
+      totalRiesgoAlto,
+      promedioOcupacionEstimada,
+      promedioPresionIngresosCamas,
+      promedioProbabilidad,
+      totalIngresos,
+      totalEgresos,
+      totalEstancias,
+      totalPacientesCama,
+      totalCamasDisponiblesHabilitadas,
+      nivelRiesgoPredominante,
+      mensajeResumen: this.generarMensajeResumen(
+        nivelRiesgoPredominante,
+        totalPredicciones
+      )
+    };
+  }
+
+  private promedio(valores: Array<number | null | undefined>): number {
+    const validos = valores.filter(
+      (valor): valor is number => valor !== null && valor !== undefined
+    );
+
+    if (validos.length === 0) {
+      return 0;
+    }
+
+    const suma = validos.reduce((acc, valor) => acc + valor, 0);
+    return Math.round((suma / validos.length) * 100) / 100;
+  }
+
+  private sumar(valores: Array<number | null | undefined>): number {
+    return valores
+      .filter((valor): valor is number => valor !== null && valor !== undefined)
+      .reduce((acc, valor) => acc + valor, 0);
+  }
+
+  private obtenerRiesgoPredominante(bajo: number, medio: number, alto: number): string {
+    if (alto >= medio && alto >= bajo && alto > 0) {
+      return 'ALTO';
+    }
+
+    if (medio >= alto && medio >= bajo && medio > 0) {
+      return 'MEDIO';
+    }
+
+    if (bajo > 0) {
+      return 'BAJO';
+    }
+
+    return 'SIN DATOS';
+  }
+
+  private generarMensajeResumen(
+    riesgoPredominante: string,
+    totalPredicciones: number
+  ): string {
+    if (totalPredicciones === 0) {
+      return 'No existen registros para los filtros seleccionados.';
+    }
+
+    if (riesgoPredominante === 'ALTO') {
+      return 'Según los filtros aplicados, predomina el riesgo alto de insuficiencia de capacidad asistencial.';
+    }
+
+    if (riesgoPredominante === 'MEDIO') {
+      return 'Según los filtros aplicados, predomina el riesgo medio y se recomienda seguimiento preventivo.';
+    }
+
+    if (riesgoPredominante === 'BAJO') {
+      return 'Según los filtros aplicados, predomina el riesgo bajo.';
+    }
+
+    return 'No se pudo determinar un riesgo predominante.';
   }
 
   limpiarFiltros(): void {
