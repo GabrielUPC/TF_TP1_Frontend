@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { environment } from '../../environment';
 import { ArchivoCargado } from '../models/archivo-cargado';
 
 @Injectable({
@@ -9,7 +10,7 @@ import { ArchivoCargado } from '../models/archivo-cargado';
 })
 export class ArchivoService {
 
-  private apiUrl = 'http://localhost:8080/archivos';
+  private readonly apiUrl = `${environment.base}/archivos`;
 
   constructor(private http: HttpClient) {}
 

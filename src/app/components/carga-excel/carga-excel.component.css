@@ -86,26 +86,8 @@ button:disabled {
   font-weight: 800;
 }
 
-.ipress-asignada {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: #eef6fb;
-  border: 1px solid #d8e6f0;
-  border-radius: 14px;
-  padding: 14px 16px;
-  margin-bottom: 18px;
-}
-
-.ipress-asignada span {
-  color: #334e68;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.ipress-asignada strong {
-  color: #102a43;
-  font-size: 16px;
+.sesion-info {
+  line-height: 1.7;
 }
 
 .upload-box {

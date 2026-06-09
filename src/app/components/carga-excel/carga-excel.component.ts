@@ -4,6 +4,7 @@ import { Component } from '@angular/core';
 import { ExcelHospitalarioService } from '../../services/excel-hospitalario.service';
 import { ResumenCargaExcel } from '../../models/resumen-carga-excel';
 import { AuthService } from '../../services/auth.service';
+import { SesionUsuario } from '../../models/sesion-usuario';
 
 @Component({
   selector: 'app-carga-excel',
@@ -26,9 +27,8 @@ export class CargaExcelComponent {
     private authService: AuthService
   ) {}
 
-  obtenerIpressAsignada(): string {
-    const usuario = this.authService.obtenerUsuarioActual();
-    return usuario?.ipressAsignada || usuario?.nombreIpress || 'No asignada';
+  obtenerUsuario(): SesionUsuario | null {
+    return this.authService.obtenerUsuarioActual();
   }
 
   seleccionarArchivo(event: Event): void {
@@ -85,13 +85,18 @@ export class CargaExcelComponent {
 
     const usuario = this.authService.obtenerUsuarioActual();
 
-    if (!usuario || usuario.idUsuario <= 0) {
+    if (!usuario) {
       this.error = 'No se encontró una sesión de usuario válida. Vuelve a iniciar sesión.';
       return;
     }
 
+    if (!usuario.idUsuario || usuario.idUsuario <= 0) {
+      this.error = 'No se encontró un identificador de usuario válido. Vuelve a iniciar sesión.';
+      return;
+    }
+
     if (!usuario.idIpress || usuario.idIpress <= 0) {
-      this.error = 'Tu usuario no tiene una IPRESS asignada. Contacta al administrador.';
+      this.error = 'El usuario no tiene una IPRESS asignada. Verifica la configuración del usuario.';
       return;
     }
 

@@ -19,10 +19,9 @@ export class DashboardComponent implements OnInit {
   detalle: DashboardDetalle[] = [];
   alertas: DashboardDetalle[] = [];
 
-  anioFiltro: number | undefined;
-  mesFiltro: number | undefined;
+  anioFiltro: number | null = null;
+  mesFiltro: number | null = null;
   servicioFiltro: string = '';
-  aniosDisponibles: number[] = [];
   readonly meses = [
     { valor: 1, nombre: 'Enero' },
     { valor: 2, nombre: 'Febrero' },
@@ -48,8 +47,8 @@ export class DashboardComponent implements OnInit {
   }
 
   cargarDashboard(): void {
-    this.anioFiltro = undefined;
-    this.mesFiltro = undefined;
+    this.anioFiltro = null;
+    this.mesFiltro = null;
     this.servicioFiltro = '';
     this.cargando = true;
     this.error = '';
@@ -63,13 +62,11 @@ export class DashboardComponent implements OnInit {
         this.resumen = data.resumen;
         this.detalle = data.detalle;
         this.alertas = data.alertas;
-        this.aniosDisponibles = [...new Set(data.detalle.map((item) => item.anio))]
-          .sort((a, b) => b - a);
         this.cargando = false;
       },
       error: (error) => {
         console.error('Error al cargar dashboard:', error);
-        this.error = 'No se pudo cargar el dashboard. Verifica que el backend esté activo en http://localhost:8080.';
+        this.error = 'No se pudo cargar el dashboard. Verifica que el backend esté activo.';
         this.cargando = false;
       }
     });
@@ -82,20 +79,30 @@ export class DashboardComponent implements OnInit {
     const servicio = this.servicioFiltro.trim() || undefined;
 
     this.dashboardService.filtrar(
-      this.anioFiltro,
-      this.mesFiltro,
+      this.anioFiltro ?? undefined,
+      this.mesFiltro ?? undefined,
       servicio
     ).subscribe({
-      next: (detalle) => {
-        this.detalle = detalle;
+      next: (data) => {
+        this.detalle = data;
+        this.alertas = data.filter((item) =>
+          item.nivelRiesgo === 'MEDIO' || item.nivelRiesgo === 'ALTO'
+        );
         this.cargando = false;
       },
       error: (error) => {
         console.error('Error al filtrar dashboard:', error);
-        this.error = 'No se pudo filtrar el dashboard. Intenta nuevamente.';
+        this.error = 'No se pudo filtrar la información del dashboard.';
         this.cargando = false;
       }
     });
+  }
+
+  limpiarFiltros(): void {
+    this.anioFiltro = null;
+    this.mesFiltro = null;
+    this.servicioFiltro = '';
+    this.cargarDashboard();
   }
 
   obtenerClaseRiesgo(nivelRiesgo: string | null | undefined): string {

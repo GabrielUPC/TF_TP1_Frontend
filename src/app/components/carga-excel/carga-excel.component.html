@@ -24,9 +24,11 @@
 
     <h3>Seleccionar archivo Excel</h3>
 
-    <div class="ipress-asignada">
-      <span>IPRESS asignada</span>
-      <strong>{{ obtenerIpressAsignada() }}</strong>
+    <div class="nota-info sesion-info">
+      <strong>Usuario:</strong> {{ obtenerUsuario()?.nombre || 'No identificado' }}
+      <br>
+      <strong>IPRESS asignada:</strong>
+      {{ obtenerUsuario()?.ipressAsignada || obtenerUsuario()?.nombreIpress || 'No asignada' }}
     </div>
 
     <div class="upload-box">

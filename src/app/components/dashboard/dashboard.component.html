@@ -22,18 +22,17 @@
   <section class="filtros-card">
     <div class="filtro-group">
       <label for="anioFiltro">Año</label>
-      <select id="anioFiltro" [(ngModel)]="anioFiltro">
-        <option [ngValue]="undefined">Todos</option>
-        <option *ngFor="let anio of aniosDisponibles" [ngValue]="anio">
-          {{ anio }}
-        </option>
-      </select>
+      <input
+        id="anioFiltro"
+        type="number"
+        [(ngModel)]="anioFiltro"
+        placeholder="Ejemplo: 2026">
     </div>
 
     <div class="filtro-group">
       <label for="mesFiltro">Mes</label>
       <select id="mesFiltro" [(ngModel)]="mesFiltro">
-        <option [ngValue]="undefined">Todos</option>
+        <option [ngValue]="null">Todos</option>
         <option *ngFor="let mes of meses" [ngValue]="mes.valor">
           {{ mes.nombre }}
         </option>
@@ -53,7 +52,7 @@
       <button class="btn-filter" (click)="filtrarDashboard()" [disabled]="cargando">
         Filtrar
       </button>
-      <button class="btn-clear" (click)="cargarDashboard()" [disabled]="cargando">
+      <button class="btn-clear" (click)="limpiarFiltros()" [disabled]="cargando">
         Limpiar
       </button>
     </div>

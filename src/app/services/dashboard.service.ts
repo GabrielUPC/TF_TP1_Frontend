@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../environment';
 import { DashboardResumen } from '../models/dashboard-resumen';
 import { DashboardDetalle } from '../models/dashboard-detalle';
 
@@ -10,7 +10,7 @@ import { DashboardDetalle } from '../models/dashboard-detalle';
 })
 export class DashboardService {
 
-  private apiUrl = 'http://localhost:8080/dashboard';
+  private readonly apiUrl = `${environment.base}/dashboard`;
 
   constructor(private http: HttpClient) {}
 
@@ -27,22 +27,20 @@ export class DashboardService {
   }
 
   filtrar(anio?: number, mes?: number, servicioHospitalario?: string): Observable<DashboardDetalle[]> {
-    let params: string[] = [];
+    let params = new HttpParams();
 
-    if (anio) {
-      params.push(`anio=${anio}`);
+    if (anio !== undefined) {
+      params = params.set('anio', anio);
     }
 
-    if (mes) {
-      params.push(`mes=${mes}`);
+    if (mes !== undefined) {
+      params = params.set('mes', mes);
     }
 
     if (servicioHospitalario) {
-      params.push(`servicioHospitalario=${servicioHospitalario}`);
+      params = params.set('servicioHospitalario', servicioHospitalario);
     }
 
-    const queryParams = params.length > 0 ? `?${params.join('&')}` : '';
-
-    return this.http.get<DashboardDetalle[]>(`${this.apiUrl}/filtro${queryParams}`);
+    return this.http.get<DashboardDetalle[]>(`${this.apiUrl}/filtro`, { params });
   }
 }

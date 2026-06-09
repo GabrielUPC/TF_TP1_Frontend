@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../environment';
 import { Reporte } from '../models/reporte';
 
 @Injectable({
@@ -9,7 +9,7 @@ import { Reporte } from '../models/reporte';
 })
 export class ReporteService {
 
-  private apiUrl = 'http://localhost:8080/reportes';
+  private apiUrl = `${environment.base}/reportes`;
 
   constructor(private http: HttpClient) {}
 

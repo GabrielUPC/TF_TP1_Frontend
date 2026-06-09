@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../environment';
 import { ResumenCargaExcel } from '../models/resumen-carga-excel';
 
 @Injectable({
@@ -9,7 +9,7 @@ import { ResumenCargaExcel } from '../models/resumen-carga-excel';
 })
 export class ExcelHospitalarioService {
 
-  private apiUrl = 'http://localhost:8080/excel-hospitalario';
+  private readonly apiUrl = `${environment.base}/excel-hospitalario`;
 
   constructor(private http: HttpClient) {}
 
