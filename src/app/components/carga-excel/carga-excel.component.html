@@ -9,14 +9,15 @@
     </div>
 
     <button class="btn-secondary-ipress" (click)="descargarPlantilla()" [disabled]="descargando">
-      {{ descargando ? 'Descargando...' : 'Descargar plantilla' }}
+      {{ descargando ? 'Descargando...' : 'Descargar formato de referencia' }}
     </button>
   </div>
 
   <div class="nota-info">
     <strong>Importante:</strong>
-    Sube un archivo hospitalario CSV o Excel. El sistema detectará automáticamente
-    si corresponde al formato interno o a un dataset D1 y aplicará el procesamiento necesario.
+    Sube un archivo hospitalario CSV o Excel. El sistema detectará automáticamente el formato y
+    aplicará el procesamiento necesario. El formato de referencia es opcional y solo sirve como
+    guía cuando no se cuenta con un archivo compatible.
   </div>
 
   <div class="form-card">
