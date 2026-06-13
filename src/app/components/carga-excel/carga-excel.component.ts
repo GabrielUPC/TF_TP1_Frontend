@@ -41,8 +41,10 @@ export class CargaExcelComponent {
 
     const archivo = input.files[0];
 
-    if (!archivo.name.toLowerCase().endsWith('.xlsx')) {
-      this.error = 'Solo se permite cargar archivos con formato .xlsx.';
+    const nombre = archivo.name.toLowerCase();
+
+    if (!nombre.endsWith('.xlsx') && !nombre.endsWith('.csv')) {
+      this.error = 'Solo se permiten archivos hospitalarios .csv o .xlsx.';
       this.archivoSeleccionado = null;
       input.value = '';
       return;
@@ -79,7 +81,7 @@ export class CargaExcelComponent {
 
   cargarExcel(): void {
     if (!this.archivoSeleccionado) {
-      this.error = 'Selecciona un archivo Excel antes de cargar.';
+      this.error = 'Selecciona un archivo hospitalario antes de cargar.';
       return;
     }
 
@@ -115,7 +117,8 @@ export class CargaExcelComponent {
       },
       error: (error) => {
         console.error('Error al cargar Excel:', error);
-        this.error = 'No se pudo cargar el archivo. Verifica el backend, el usuario, la IPRESS y el formato del Excel.';
+        this.error = error?.error?.message
+          || 'No se pudo cargar el archivo. Verifica el backend, el usuario, la IPRESS y el formato hospitalario.';
         this.cargando = false;
       }
     });

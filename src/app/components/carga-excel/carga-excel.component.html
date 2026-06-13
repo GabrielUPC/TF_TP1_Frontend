@@ -4,7 +4,7 @@
     <div>
       <h2>Carga de información hospitalaria</h2>
       <p>
-        Carga, validación y procesamiento de archivos Excel con información mensual de hospitalización.
+        Carga, validación y procesamiento de archivos hospitalarios mensuales.
       </p>
     </div>
 
@@ -15,14 +15,13 @@
 
   <div class="nota-info">
     <strong>Importante:</strong>
-    El archivo debe estar en formato .xlsx y respetar las columnas de la plantilla:
-    código RENIPRESS, año, mes, servicio hospitalario, ingresos, egresos, estancias,
-    pacientes-cama, camas totales y camas disponibles habilitadas.
+    Sube un archivo hospitalario CSV o Excel. El sistema detectará automáticamente
+    si corresponde al formato interno o a un dataset D1 y aplicará el procesamiento necesario.
   </div>
 
   <div class="form-card">
 
-    <h3>Seleccionar archivo Excel</h3>
+    <h3>Seleccionar archivo hospitalario</h3>
 
     <div class="nota-info sesion-info">
       <strong>Usuario:</strong> {{ obtenerUsuario()?.nombre || 'No identificado' }}
@@ -35,20 +34,20 @@
       <input
         id="archivoExcel"
         type="file"
-        accept=".xlsx"
+        accept=".csv,.xlsx"
         (change)="seleccionarArchivo($event)">
 
       <div class="upload-text">
-        <h4>{{ archivoSeleccionado ? archivoSeleccionado.name : 'Selecciona un archivo .xlsx' }}</h4>
+        <h4>{{ archivoSeleccionado ? archivoSeleccionado.name : 'Selecciona un archivo .csv o .xlsx' }}</h4>
         <p>
-          El archivo será validado y procesado por el backend.
+          El backend detectará el formato y ejecutará internamente el ETL necesario.
         </p>
       </div>
     </div>
 
     <div class="actions">
       <button class="btn-primary-ipress" (click)="cargarExcel()" [disabled]="cargando">
-        {{ cargando ? 'Procesando...' : 'Cargar y procesar Excel' }}
+        {{ cargando ? 'Procesando...' : 'Cargar y procesar archivo' }}
       </button>
 
       <button class="btn-light-ipress" (click)="limpiar()" [disabled]="cargando">
@@ -93,19 +92,36 @@
       </div>
 
       <div class="resultado-item">
+        <span>Formato detectado</span>
+        <strong>{{ resultado.formatoDetectado || resultado.formato }}</strong>
+      </div>
+
+      <div class="resultado-item">
         <span>Registros válidos</span>
-        <strong>{{ resultado.registrosValidos }}</strong>
+        <strong>{{ resultado.totalRegistrosValidos ?? resultado.registrosValidos }}</strong>
       </div>
 
       <div class="resultado-item">
-        <span>Registros con errores</span>
-        <strong>{{ resultado.registrosConErrores }}</strong>
+        <span>Filas inválidas</span>
+        <strong>{{ resultado.totalFilasInvalidas ?? resultado.registrosConErrores }}</strong>
       </div>
 
       <div class="resultado-item">
-        <span>Formato</span>
-        <strong>{{ resultado.formato }}</strong>
+        <span>Predicciones generadas</span>
+        <strong>{{ resultado.totalPrediccionesGeneradas }}</strong>
       </div>
+
+    </div>
+
+    <div *ngIf="resultado.advertencias && resultado.advertencias.length > 0" class="advertencias-section">
+
+      <h3>Advertencias</h3>
+
+      <ul>
+        <li *ngFor="let advertencia of resultado.advertencias">
+          {{ advertencia }}
+        </li>
+      </ul>
 
     </div>
 
