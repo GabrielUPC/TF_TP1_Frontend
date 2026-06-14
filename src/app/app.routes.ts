@@ -6,7 +6,6 @@ import { UsuariosComponent } from './components/usuarios/usuarios.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { CargaExcelComponent } from './components/carga-excel/carga-excel.component';
 import { ArchivosComponent } from './components/archivos/archivos.component';
-import { AlertasComponent } from './components/alertas/alertas.component';
 import { ReportesComponent } from './components/reportes/reportes.component';
 import { InicioAdminComponent } from './components/inicio-admin/inicio-admin.component';
 import { ConfiguracionComponent } from './components/configuracion/configuracion.component';
@@ -49,12 +48,6 @@ export const routes: Routes = [
     component: ArchivosComponent,
     canActivate: [authGuard, roleGuard],
     data: { roles: ['ADMISION_REGISTROS'] }
-  },
-  {
-    path: 'alertas',
-    component: AlertasComponent,
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['ATENCION_HOSPITALIZACION'] }
   },
   {
     path: 'reportes',

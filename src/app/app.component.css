@@ -1,226 +1,262 @@
+:host {
+  --app-bg: #f3f6fb;
+  --app-surface: #ffffff;
+  --app-navy: #092d5f;
+  --app-primary: #1268d5;
+  --app-text: #18324d;
+  --app-muted: #677b90;
+  --app-border: #dce5ef;
+  --app-shadow: 0 12px 32px rgba(24, 50, 77, .08);
+  --app-radius: 18px;
+  --app-space-1: 8px;
+  --app-space-2: 16px;
+  --app-space-3: 24px;
+  --app-space-4: 32px;
+  --app-font-sm: 12px;
+  --app-font-base: 14px;
+  --app-font-title: 32px;
+  display: block;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
 .app-layout {
   min-height: 100vh;
   display: flex;
-  background: #f4f7fb;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--app-bg);
 }
 
-/* Sidebar */
-
 .sidebar {
-  width: 250px;
-  background: linear-gradient(180deg, #062b5f 0%, #021b3f 100%);
-  color: #ffffff;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  width: 264px;
   display: flex;
   flex-direction: column;
-  padding: 18px 14px;
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  padding: 24px 18px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 20% 0, rgba(35, 126, 231, .28), transparent 32%),
+    linear-gradient(180deg, #082f68 0%, #041d42 100%);
+  box-shadow: 12px 0 36px rgba(4, 29, 66, .14);
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 8px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 14px;
+  padding: 4px 6px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, .14);
 }
 
 .logo-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  background: #ffffff;
-  color: #0057c8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex: 0 0 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #075abb;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+  font-size: 17px;
   font-weight: 900;
 }
 
 .sidebar-header h5 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 800;
+  margin: 0 0 2px;
+  color: #a9d1ff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .sidebar-header strong {
   display: block;
-  font-size: 16px;
-  color: #d9ecff;
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.25;
 }
 
 .sidebar-menu {
-  margin-top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 28px;
 }
 
 .menu-item {
-  color: #dceaff;
-  text-decoration: none;
-  padding: 13px 14px;
-  border-radius: 11px;
+  min-height: 50px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: 0.2s ease;
+  gap: 13px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: #d9e9fb;
+  text-decoration: none;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 650;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
 }
 
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  color: #fff;
+  background: rgba(255, 255, 255, .1);
+  transform: translateX(2px);
 }
 
 .menu-item.active {
-  background: #0066e6;
-  color: #ffffff;
-  box-shadow: 0 8px 20px rgba(0, 102, 230, 0.25);
-}
-
-.menu-item.disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+  color: #fff;
+  background: linear-gradient(135deg, #1678ea, #0757bc);
+  box-shadow: 0 10px 26px rgba(0, 91, 204, .36);
 }
 
 .menu-icon {
-  width: 24px;
+  width: 26px;
+  flex: 0 0 26px;
   text-align: center;
-  font-size: 17px;
+  font-size: 20px;
 }
 
-/* Main */
-
 .main-content {
-  margin-left: 250px;
-  width: calc(100% - 250px);
+  width: calc(100% - 264px);
   min-height: 100vh;
+  margin-left: 264px;
 }
 
 .topbar {
-  height: 72px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5edf5;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  min-height: 82px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  gap: 24px;
+  padding: 14px 32px;
+  border-bottom: 1px solid rgba(220, 229, 239, .9);
+  background: rgba(255, 255, 255, .94);
+  backdrop-filter: blur(14px);
 }
 
-.brand-ipress {
+.brand-ipress,
+.user-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #102a43;
+}
+
+.brand-ipress { gap: 14px; min-width: 0; }
+.hospital-icon,
+.user-avatar {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, #1678ea, #0752af);
+  box-shadow: 0 8px 20px rgba(18, 104, 213, .2);
 }
 
 .hospital-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  border: 1px solid #cfe0f2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0057c8;
-  font-size: 22px;
+  flex: 0 0 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 23px;
 }
 
-.brand-ipress span {
+.brand-ipress span,
+.user-card span {
   display: block;
-  color: #35658f;
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--app-muted);
+  font-size: 12px;
 }
 
 .brand-ipress strong {
   display: block;
-  color: #062b5f;
+  overflow: hidden;
+  color: var(--app-navy);
   font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
+.user-card { gap: 12px; }
 .user-avatar {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0066e6 0%, #003e9a 100%);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-weight: 800;
 }
 
 .user-card strong {
   display: block;
-  color: #102a43;
+  color: var(--app-text);
   font-size: 14px;
 }
 
-.user-card span {
-  display: block;
-  color: #6b7c93;
-  font-size: 12px;
-}
-
 .btn-logout {
-  border: 1px solid #d8e6f0;
-  background: #ffffff;
-  color: #062b5f;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #cddae7;
+  border-radius: 12px;
+  color: var(--app-navy);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 750;
 }
 
-.btn-logout:hover {
-  background: #eef6fb;
+.btn-logout:hover { background: #edf5fd; }
+.page-container { padding: 32px; }
+
+@media (max-width: 1100px) {
+  .sidebar { width: 92px; padding: 22px 12px; }
+  .sidebar-header { justify-content: center; padding-inline: 0; }
+  .sidebar-header > div:last-child { display: none; }
+  .sidebar-menu { align-items: stretch; }
+  .menu-item { justify-content: center; padding-inline: 10px; font-size: 0; }
+  .menu-icon { font-size: 21px; }
+  .main-content { width: calc(100% - 92px); margin-left: 92px; }
+  .page-container { padding: 26px; }
 }
 
-.page-container {
-  padding: 28px;
-}
-
-@media (max-width: 900px) {
+@media (max-width: 720px) {
+  .app-layout { display: block; padding-bottom: 76px; }
   .sidebar {
-    width: 86px;
-    padding: 18px 10px;
+    inset: auto 0 0;
+    width: 100%;
+    height: 72px;
+    padding: 8px 12px;
+    background: rgba(5, 35, 77, .97);
+    box-shadow: 0 -8px 28px rgba(4, 29, 66, .18);
   }
-
-  .sidebar-header div:not(.logo-icon),
+  .sidebar-header { display: none; }
+  .sidebar-menu {
+    height: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 6px;
+    margin: 0;
+  }
   .menu-item {
-    font-size: 0;
+    flex: 1;
+    min-height: 54px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 4px;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1;
   }
+  .menu-icon { width: auto; font-size: 19px; }
+  .main-content { width: 100%; margin-left: 0; }
+  .topbar { min-height: 72px; padding: 11px 18px; }
+  .hospital-icon { display: none; }
+  .brand-ipress strong { max-width: 230px; }
+  .user-card > div:not(.user-avatar) { display: none; }
+  .btn-logout { padding-inline: 11px; }
+  .page-container { padding: 20px 16px; }
+}
 
-  .menu-icon {
-    font-size: 20px;
-  }
-
-  .main-content {
-    margin-left: 86px;
-    width: calc(100% - 86px);
-  }
-
-  .topbar {
-    padding: 0 18px;
-  }
-
-  .brand-ipress div:last-child {
-    display: none;
-  }
+@media (max-width: 460px) {
+  .brand-ipress span { display: none; }
+  .brand-ipress strong { max-width: 170px; font-size: 13px; }
+  .user-avatar { display: none; }
+  .menu-item { font-size: 12px; }
 }

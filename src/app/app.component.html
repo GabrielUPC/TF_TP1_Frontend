@@ -45,11 +45,6 @@
           Historial
         </a>
 
-        <a *ngIf="esHospitalizacion()" routerLink="/alertas" routerLinkActive="active" class="menu-item">
-          <span class="menu-icon">⚠</span>
-          Alertas
-        </a>
-
         <a *ngIf="esHospitalizacion()" routerLink="/reportes" routerLinkActive="active" class="menu-item">
           <span class="menu-icon">▦</span>
           Reportes
@@ -93,7 +88,7 @@
             <span>{{ obtenerUsuario()?.nombreRol || 'Modo desarrollo' }}</span>
           </div>
 
-          <button class="btn-logout" (click)="cerrarSesion()">
+          <button class="btn-logout" type="button" (click)="cerrarSesion()">
             Salir
           </button>
         </div>
