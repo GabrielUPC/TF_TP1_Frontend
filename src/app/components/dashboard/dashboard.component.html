@@ -173,7 +173,7 @@
           <div class="risk-level">{{ registroCritico?.nivelRiesgo || 'SIN DATOS' }}</div>
 
           <div class="probability-block">
-            <span>Probabilidad estimada</span>
+            <span>Confianza del modelo</span>
             <strong>{{ formatearPorcentaje(registroCritico?.probabilidad) }}</strong>
           </div>
 
@@ -328,7 +328,7 @@
           <div class="variable-summary" *ngIf="registroCritico">
             <span>Servicio analizado</span>
             <strong>{{ registroCritico.servicioHospitalario }}</strong>
-            <small>Probabilidad {{ formatearPorcentaje(registroCritico.probabilidad) }}</small>
+            <small>Confianza {{ formatearPorcentaje(registroCritico.probabilidad) }}</small>
           </div>
 
           <div class="variable-list" *ngIf="variablesInfluyentes.length > 0">
@@ -346,6 +346,35 @@
           <div *ngIf="variablesInfluyentes.length === 0" class="mini-empty">
             Sin variables disponibles.
           </div>
+          <section class="dashboard-alerts">
+  <div class="subpanel-heading">
+    <div>
+      <span class="section-kicker">Alertas operativas</span>
+      <h3>Alertas destacadas</h3>
+      <p>Servicios con riesgo medio o alto</p>
+    </div>
+    <strong>{{ alertasDestacadas.length }}</strong>
+  </div>
+
+  <div *ngIf="alertasDestacadas.length === 0" class="mini-empty alert-empty">
+    No hay alertas críticas para el periodo seleccionado.
+  </div>
+
+  <div class="alert-list" *ngIf="alertasDestacadas.length > 0">
+    <article
+      class="alert-item"
+      *ngFor="let alerta of alertasDestacadas"
+      [ngClass]="obtenerClaseRiesgo(alerta.nivelRiesgo)"
+    >
+      <span class="alert-mark">!</span>
+
+      <div>
+        <strong>{{ alerta.servicioHospitalario }}: riesgo {{ alerta.nivelRiesgo }}</strong>
+        <p>{{ obtenerMensajeAlerta(alerta) }}</p>
+      </div>
+    </article>
+  </div>
+</section>
         </aside>
       </section>
 

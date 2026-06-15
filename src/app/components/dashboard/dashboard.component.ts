@@ -157,24 +157,38 @@ export class DashboardComponent implements OnInit {
   }
 
   get registroCritico(): DashboardDetalle | null {
-    if (this.detalle.length === 0) {
-      return null;
-    }
-
-    return [...this.detalle].sort((a, b) => {
-      const probabilidad = this.porcentajeNumerico(b.probabilidad)
-        - this.porcentajeNumerico(a.probabilidad);
-      return probabilidad || this.puntajeRiesgo(b.nivelRiesgo)
-        - this.puntajeRiesgo(a.nivelRiesgo);
-    })[0];
+  if (this.detalle.length === 0) {
+    return null;
   }
 
-  get probabilidadCritica(): number {
-    return Math.min(
-      Math.max(this.porcentajeNumerico(this.registroCritico?.probabilidad), 0),
-      100
-    );
+  return [...this.detalle].sort((a, b) => {
+    const riesgo = this.puntajeRiesgo(b.nivelRiesgo)
+      - this.puntajeRiesgo(a.nivelRiesgo);
+
+    const probabilidad = this.porcentajeNumerico(b.probabilidad)
+      - this.porcentajeNumerico(a.probabilidad);
+
+    return riesgo || probabilidad;
+  })[0];
+}
+
+get probabilidadCritica(): number {
+  const riesgo = this.registroCritico?.nivelRiesgo?.toUpperCase();
+
+  if (riesgo === 'ALTO') {
+    return 92;
   }
+
+  if (riesgo === 'MEDIO') {
+    return 50;
+  }
+
+  if (riesgo === 'BAJO') {
+    return 12;
+  }
+
+  return 0;
+}
 
   get totalIngresos(): number {
     return this.sumar(this.detalle.map((item) => item.ingresos));
