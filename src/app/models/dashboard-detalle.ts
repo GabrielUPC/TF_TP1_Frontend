@@ -26,7 +26,13 @@ export interface DashboardDetalle {
   rotacionCamas: number;
 
   nivelRiesgo: string;
+
+  // Probabilidad de la clase predicha: BAJO, MEDIO o ALTO
   probabilidad: number;
+
+  // Probabilidad específica de riesgo ALTO
+  probabilidadRiesgoAlto?: number | null;
+
   modeloUtilizado: string;
   fechaPrediccion: string;
 

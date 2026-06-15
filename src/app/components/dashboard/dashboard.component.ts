@@ -263,24 +263,34 @@ private aplicarUltimoArchivoPorDefecto(): void {
     })[0];
   }
 
-  get probabilidadCritica(): number {
-    const riesgo = this.registroCritico?.nivelRiesgo?.toUpperCase();
+get probabilidadCritica(): number {
+  return this.porcentajeNumerico(this.obtenerPorcentajeRiesgoAlto());
+}
 
-    if (riesgo === 'ALTO') {
-      return 92;
-    }
+get porcentajeRiesgoAlto(): number {
+  return this.obtenerPorcentajeRiesgoAlto();
+}
 
-    if (riesgo === 'MEDIO') {
-      return 50;
-    }
+private obtenerPorcentajeRiesgoAlto(): number {
+  const registro = this.registroCritico;
 
-    if (riesgo === 'BAJO') {
-      return 12;
-    }
-
+  if (!registro) {
     return 0;
   }
 
+  if (
+    registro.probabilidadRiesgoAlto !== null &&
+    registro.probabilidadRiesgoAlto !== undefined
+  ) {
+    return registro.probabilidadRiesgoAlto;
+  }
+
+  if (registro.nivelRiesgo?.toUpperCase() === 'ALTO') {
+    return registro.probabilidad;
+  }
+
+  return 0;
+}
   get totalIngresos(): number {
     return this.sumar(this.detalle.map((item) => item.ingresos));
   }

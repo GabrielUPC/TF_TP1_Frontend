@@ -198,8 +198,8 @@
           <div class="risk-level">{{ registroCritico?.nivelRiesgo || 'SIN DATOS' }}</div>
 
           <div class="probability-block">
-            <span>Confianza del modelo</span>
-            <strong>{{ formatearPorcentaje(registroCritico?.probabilidad) }}</strong>
+            <span>Porcentaje de riesgo alto</span>
+            <strong>{{ formatearPorcentaje(porcentajeRiesgoAlto) }}</strong>
           </div>
 
           <div class="risk-scale">
