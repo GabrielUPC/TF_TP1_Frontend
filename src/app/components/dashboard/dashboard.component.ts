@@ -84,41 +84,75 @@ export class DashboardComponent implements OnInit {
     this.cargarDashboard();
   }
 
-  cargarDashboard(): void {
-    this.anioFiltro = null;
-    this.mesFiltro = null;
-    this.servicioFiltro = '';
-    this.idArchivoFiltro = null;
-    this.seleccionArchivo = 'TODOS';
-    this.cargando = true;
-    this.error = '';
+cargarDashboard(): void {
+  this.anioFiltro = null;
+  this.mesFiltro = null;
+  this.servicioFiltro = '';
+  this.idArchivoFiltro = null;
+  this.seleccionArchivo = 'TODOS';
+  this.cargando = true;
+  this.error = '';
 
-    forkJoin({
-      resumen: this.dashboardService.obtenerResumen(),
-      detalle: this.dashboardService.obtenerDetalle(),
-      alertas: this.dashboardService.obtenerAlertas(),
-      archivos: this.archivoService.listarArchivosProcesados().pipe(
-        catchError((error) => {
-          console.error('Error al cargar archivos procesados:', error);
-          return of([] as ArchivoProcesado[]);
-        })
-      )
-    }).subscribe({
-      next: (data) => {
-        this.resumen = data.resumen;
-        this.detalle = data.detalle;
-        this.detalleCatalogo = data.detalle;
-        this.alertas = data.alertas;
-        this.archivosProcesados = data.archivos;
-        this.cargando = false;
-      },
-      error: (error) => {
-        console.error('Error al cargar dashboard:', error);
-        this.error = 'No se pudo cargar el dashboard. Verifica que el backend esté activo.';
-        this.cargando = false;
-      }
+  forkJoin({
+    resumen: this.dashboardService.obtenerResumen(),
+    detalle: this.dashboardService.obtenerDetalle(),
+    alertas: this.dashboardService.obtenerAlertas(),
+    archivos: this.archivoService.listarArchivosProcesados().pipe(
+      catchError((error) => {
+        console.error('Error al cargar archivos procesados:', error);
+        return of([] as ArchivoProcesado[]);
+      })
+    )
+  }).subscribe({
+    next: (data) => {
+      this.resumen = data.resumen;
+      this.detalle = data.detalle;
+      this.detalleCatalogo = data.detalle;
+      this.alertas = data.alertas;
+      this.archivosProcesados = data.archivos;
+
+      this.aplicarUltimoArchivoPorDefecto();
+
+      this.cargando = false;
+    },
+    error: (error) => {
+      console.error('Error al cargar dashboard:', error);
+      this.error = 'No se pudo cargar el dashboard. Verifica que el backend esté activo.';
+      this.cargando = false;
+    }
+  });
+}
+private aplicarUltimoArchivoPorDefecto(): void {
+  const ultimo = this.ultimoArchivoProcesado;
+
+  if (!ultimo) {
+    this.seleccionArchivo = 'TODOS';
+    this.idArchivoFiltro = null;
+    this.detalle = this.detalleCatalogo;
+    this.alertas = this.detalleCatalogo.filter((item) => {
+      const riesgo = item.nivelRiesgo?.toUpperCase();
+      return riesgo === 'MEDIO' || riesgo === 'ALTO';
     });
+    this.resumen = this.construirResumenDesdeDetalle(this.detalleCatalogo);
+    return;
   }
+
+  this.seleccionArchivo = 'ULTIMO';
+  this.idArchivoFiltro = ultimo.idArchivo;
+
+  const detalleUltimoArchivo = this.detalleCatalogo.filter(
+    (item) => item.idArchivo === ultimo.idArchivo
+  );
+
+  this.detalle = detalleUltimoArchivo;
+
+  this.alertas = detalleUltimoArchivo.filter((item) => {
+    const riesgo = item.nivelRiesgo?.toUpperCase();
+    return riesgo === 'MEDIO' || riesgo === 'ALTO';
+  });
+
+  this.resumen = this.construirResumenDesdeDetalle(detalleUltimoArchivo);
+}
 
   filtrarDashboard(): void {
     this.cargando = true;
@@ -183,9 +217,15 @@ export class DashboardComponent implements OnInit {
   }
 
   get etiquetaArchivoSeleccionado(): string {
-    return this.seleccionArchivo === 'ULTIMO'
-      ? 'Último archivo procesado'
-      : 'Archivo procesado';
+    if (this.seleccionArchivo === 'TODOS') {
+      return 'Vista actual';
+    }
+
+    if (this.seleccionArchivo === 'ULTIMO') {
+      return 'Último archivo procesado';
+    }
+
+    return 'Archivo procesado';
   }
 
   get ipressAsignada(): string {
