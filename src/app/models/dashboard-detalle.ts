@@ -7,7 +7,10 @@ export interface DashboardDetalle {
 
   anio: number;
   mes: number;
+  anioPredicho?: number;
+  mesPredicho?: number;
   servicioHospitalario: string;
+  codigoIpress?: string;
 
   ingresos: number;
   egresos: number;
@@ -15,6 +18,7 @@ export interface DashboardDetalle {
   pacientesCama: number;
   camasTotales: number;
   camasDisponiblesHabilitadas: number;
+  totalCamasDisponibles?: number | null;
 
   ocupacionEstimada: number;
   presionIngresosCamas: number;

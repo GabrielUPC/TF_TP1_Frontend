@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environment';
 import { ArchivoCargado } from '../models/archivo-cargado';
+import { ArchivoProcesado } from '../models/archivo-procesado';
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +17,10 @@ export class ArchivoService {
 
   listarArchivos(): Observable<ArchivoCargado[]> {
     return this.http.get<ArchivoCargado[]>(this.apiUrl);
+  }
+
+  listarArchivosProcesados(): Observable<ArchivoProcesado[]> {
+    return this.http.get<ArchivoProcesado[]>(`${this.apiUrl}/procesados`);
   }
 
   obtenerArchivoPorId(idArchivo: number): Observable<ArchivoCargado> {

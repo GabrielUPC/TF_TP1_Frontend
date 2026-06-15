@@ -9,7 +9,10 @@ export interface Reporte {
 
   anio: number;
   mes: number;
+  anioPredicho?: number;
+  mesPredicho?: number;
   servicioHospitalario: string;
+  codigoIpress?: string;
 
   ocupacionEstimada: number;
   presionIngresosCamas: number;

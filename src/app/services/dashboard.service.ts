@@ -14,20 +14,41 @@ export class DashboardService {
 
   constructor(private http: HttpClient) {}
 
-  obtenerResumen(): Observable<DashboardResumen> {
-    return this.http.get<DashboardResumen>(`${this.apiUrl}/resumen`);
+  obtenerResumen(idArchivo?: number): Observable<DashboardResumen> {
+    const params = this.crearParamsArchivo(idArchivo);
+    return this.http.get<DashboardResumen>(
+      `${this.apiUrl}/resumen`,
+      { params }
+    );
   }
 
-  obtenerDetalle(): Observable<DashboardDetalle[]> {
-    return this.http.get<DashboardDetalle[]>(`${this.apiUrl}/detalle`);
+  obtenerDetalle(idArchivo?: number): Observable<DashboardDetalle[]> {
+    const params = this.crearParamsArchivo(idArchivo);
+    return this.http.get<DashboardDetalle[]>(
+      `${this.apiUrl}/detalle`,
+      { params }
+    );
   }
 
-  obtenerAlertas(): Observable<DashboardDetalle[]> {
-    return this.http.get<DashboardDetalle[]>(`${this.apiUrl}/alertas`);
+  obtenerAlertas(idArchivo?: number): Observable<DashboardDetalle[]> {
+    const params = this.crearParamsArchivo(idArchivo);
+    return this.http.get<DashboardDetalle[]>(
+      `${this.apiUrl}/alertas`,
+      { params }
+    );
   }
 
-  filtrar(anio?: number, mes?: number, servicioHospitalario?: string): Observable<DashboardDetalle[]> {
+  filtrar(
+    idArchivo?: number,
+    anio?: number,
+    mes?: number,
+    servicioHospitalario?: string
+  ): Observable<DashboardDetalle[]> {
     let params = new HttpParams();
+
+    if (idArchivo !== undefined) {
+      params = params.set('idArchivo', idArchivo);
+    }
 
     if (anio !== undefined) {
       params = params.set('anio', anio);
@@ -42,5 +63,11 @@ export class DashboardService {
     }
 
     return this.http.get<DashboardDetalle[]>(`${this.apiUrl}/filtro`, { params });
+  }
+
+  private crearParamsArchivo(idArchivo?: number): HttpParams {
+    return idArchivo === undefined
+      ? new HttpParams()
+      : new HttpParams().set('idArchivo', idArchivo);
   }
 }

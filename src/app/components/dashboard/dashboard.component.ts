@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
+import { ArchivoProcesado } from '../../models/archivo-procesado';
 import { DashboardDetalle } from '../../models/dashboard-detalle';
 import { DashboardResumen } from '../../models/dashboard-resumen';
+import { ArchivoService } from '../../services/archivo.service';
 import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 
-interface DetalleConCapacidad extends DashboardDetalle {
-  totalCamasDisponibles?: number | null;
-}
+type SeleccionArchivo = 'TODOS' | 'ULTIMO' | number;
 
 interface ServicioIngreso {
   nombre: string;
@@ -49,6 +49,9 @@ export class DashboardComponent implements OnInit {
   alertas: DashboardDetalle[] = [];
   private detalleCatalogo: DashboardDetalle[] = [];
 
+  idArchivoFiltro: number | null = null;
+  seleccionArchivo: SeleccionArchivo = 'TODOS';
+  archivosProcesados: ArchivoProcesado[] = [];
   anioFiltro: number | null = null;
   mesFiltro: number | null = null;
   servicioFiltro = '';
@@ -73,6 +76,7 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private dashboardService: DashboardService,
+    private archivoService: ArchivoService,
     private authService: AuthService
   ) {}
 
@@ -84,19 +88,28 @@ export class DashboardComponent implements OnInit {
     this.anioFiltro = null;
     this.mesFiltro = null;
     this.servicioFiltro = '';
+    this.idArchivoFiltro = null;
+    this.seleccionArchivo = 'TODOS';
     this.cargando = true;
     this.error = '';
 
     forkJoin({
       resumen: this.dashboardService.obtenerResumen(),
       detalle: this.dashboardService.obtenerDetalle(),
-      alertas: this.dashboardService.obtenerAlertas()
+      alertas: this.dashboardService.obtenerAlertas(),
+      archivos: this.archivoService.listarArchivosProcesados().pipe(
+        catchError((error) => {
+          console.error('Error al cargar archivos procesados:', error);
+          return of([] as ArchivoProcesado[]);
+        })
+      )
     }).subscribe({
       next: (data) => {
         this.resumen = data.resumen;
         this.detalle = data.detalle;
         this.detalleCatalogo = data.detalle;
         this.alertas = data.alertas;
+        this.archivosProcesados = data.archivos;
         this.cargando = false;
       },
       error: (error) => {
@@ -112,6 +125,7 @@ export class DashboardComponent implements OnInit {
     this.error = '';
 
     this.dashboardService.filtrar(
+      this.idArchivoFiltro ?? undefined,
       this.anioFiltro ?? undefined,
       this.mesFiltro ?? undefined,
       this.servicioFiltro.trim() || undefined
@@ -137,58 +151,95 @@ export class DashboardComponent implements OnInit {
     this.cargarDashboard();
   }
 
+  cambiarArchivoSeleccionado(): void {
+    if (this.seleccionArchivo === 'TODOS') {
+      this.idArchivoFiltro = null;
+      return;
+    }
+
+    if (this.seleccionArchivo === 'ULTIMO') {
+      this.idArchivoFiltro = this.ultimoArchivoProcesado?.idArchivo ?? null;
+      return;
+    }
+
+    this.idArchivoFiltro = this.seleccionArchivo;
+  }
+
+  get ultimoArchivoProcesado(): ArchivoProcesado | null {
+    return this.archivosProcesados[0] ?? null;
+  }
+
+  get archivoSeleccionadoNombre(): string {
+    if (this.seleccionArchivo === 'TODOS') {
+      return 'Todos los archivos disponibles';
+    }
+
+    const archivo = this.archivosProcesados.find(
+      (item) => item.idArchivo === this.idArchivoFiltro
+    );
+    return archivo?.nombreArchivo
+      ?? this.registroCritico?.nombreArchivo
+      ?? 'Sin archivo';
+  }
+
+  get etiquetaArchivoSeleccionado(): string {
+    return this.seleccionArchivo === 'ULTIMO'
+      ? 'Último archivo procesado'
+      : 'Archivo procesado';
+  }
+
   get ipressAsignada(): string {
     const usuario = this.authService.obtenerUsuarioActual();
     return usuario?.ipressAsignada || usuario?.nombreIpress || 'IPRESS no asignada';
   }
 
   get aniosDisponibles(): number[] {
-    return [...new Set(this.detalleCatalogo.map((item) => item.anio))]
+    return [...new Set(this.catalogoSegunArchivo.map((item) => item.anio))]
       .filter((anio) => Number.isFinite(anio))
       .sort((a, b) => b - a);
   }
 
   get serviciosDisponibles(): string[] {
     return [...new Set(
-      this.detalleCatalogo
+      this.catalogoSegunArchivo
         .map((item) => item.servicioHospitalario?.trim())
         .filter((servicio): servicio is string => Boolean(servicio))
     )].sort((a, b) => a.localeCompare(b));
   }
 
   get registroCritico(): DashboardDetalle | null {
-  if (this.detalle.length === 0) {
-    return null;
+    if (this.detalle.length === 0) {
+      return null;
+    }
+
+    return [...this.detalle].sort((a, b) => {
+      const riesgo = this.puntajeRiesgo(b.nivelRiesgo)
+        - this.puntajeRiesgo(a.nivelRiesgo);
+
+      const probabilidad = this.porcentajeNumerico(b.probabilidad)
+        - this.porcentajeNumerico(a.probabilidad);
+
+      return riesgo || probabilidad;
+    })[0];
   }
 
-  return [...this.detalle].sort((a, b) => {
-    const riesgo = this.puntajeRiesgo(b.nivelRiesgo)
-      - this.puntajeRiesgo(a.nivelRiesgo);
+  get probabilidadCritica(): number {
+    const riesgo = this.registroCritico?.nivelRiesgo?.toUpperCase();
 
-    const probabilidad = this.porcentajeNumerico(b.probabilidad)
-      - this.porcentajeNumerico(a.probabilidad);
+    if (riesgo === 'ALTO') {
+      return 92;
+    }
 
-    return riesgo || probabilidad;
-  })[0];
-}
+    if (riesgo === 'MEDIO') {
+      return 50;
+    }
 
-get probabilidadCritica(): number {
-  const riesgo = this.registroCritico?.nivelRiesgo?.toUpperCase();
+    if (riesgo === 'BAJO') {
+      return 12;
+    }
 
-  if (riesgo === 'ALTO') {
-    return 92;
+    return 0;
   }
-
-  if (riesgo === 'MEDIO') {
-    return 50;
-  }
-
-  if (riesgo === 'BAJO') {
-    return 12;
-  }
-
-  return 0;
-}
 
   get totalIngresos(): number {
     return this.sumar(this.detalle.map((item) => item.ingresos));
@@ -216,10 +267,9 @@ get probabilidadCritica(): number {
 
   get usaCapacidadMensual(): boolean {
     return this.detalle.some((item) => {
-      const detalle = item as DetalleConCapacidad;
-      return detalle.totalCamasDisponibles !== null
-        && detalle.totalCamasDisponibles !== undefined
-        && detalle.totalCamasDisponibles > 0;
+      return item.totalCamasDisponibles !== null
+        && item.totalCamasDisponibles !== undefined
+        && item.totalCamasDisponibles > 0;
     });
   }
 
@@ -370,14 +420,52 @@ get probabilidadCritica(): number {
   }
 
   obtenerCapacidad(item: DashboardDetalle): number {
-    const detalle = item as DetalleConCapacidad;
-    if (detalle.totalCamasDisponibles !== null
-        && detalle.totalCamasDisponibles !== undefined
-        && detalle.totalCamasDisponibles > 0) {
-      return detalle.totalCamasDisponibles;
+    if (item.totalCamasDisponibles !== null
+        && item.totalCamasDisponibles !== undefined
+        && item.totalCamasDisponibles > 0) {
+      return item.totalCamasDisponibles;
     }
 
     return item.camasDisponiblesHabilitadas ?? 0;
+  }
+
+  obtenerMesPredicho(
+    item: DashboardDetalle | null | undefined
+  ): number | null {
+    if (!item?.mes) {
+      return null;
+    }
+    return item.mes === 12 ? 1 : item.mes + 1;
+  }
+
+  obtenerAnioPredicho(
+    item: DashboardDetalle | null | undefined
+  ): number | null {
+    if (!item?.anio || !item?.mes) {
+      return null;
+    }
+    return item.mes === 12 ? item.anio + 1 : item.anio;
+  }
+
+  formatearPeriodoBase(
+    item: DashboardDetalle | null | undefined
+  ): string {
+    if (!item?.mes || !item?.anio) {
+      return 'Sin periodo';
+    }
+    return `${this.nombreMes(item.mes)} ${item.anio}`;
+  }
+
+  formatearPeriodoPredicho(
+    item: DashboardDetalle | null | undefined
+  ): string {
+    const mes = item?.mesPredicho ?? this.obtenerMesPredicho(item);
+    const anio = item?.anioPredicho ?? this.obtenerAnioPredicho(item);
+
+    if (!mes || !anio) {
+      return 'Sin periodo';
+    }
+    return `${this.nombreMes(mes)} ${anio}`;
   }
 
   obtenerClaseRiesgo(nivelRiesgo: string | null | undefined): string {
@@ -420,6 +508,15 @@ get probabilidadCritica(): number {
     return Math.ceil(maximo / 25) * 25;
   }
 
+  private get catalogoSegunArchivo(): DashboardDetalle[] {
+    if (this.idArchivoFiltro === null) {
+      return this.detalleCatalogo;
+    }
+    return this.detalleCatalogo.filter(
+      (item) => item.idArchivo === this.idArchivoFiltro
+    );
+  }
+
   private construirSerieOcupacion(): Array<{ anio: number; mes: number; valor: number }> {
     const grupos = new Map<string, {
       anio: number;
@@ -450,6 +547,10 @@ get probabilidadCritica(): number {
 
   private nombreMesCorto(mes: number): string {
     return this.meses.find((item) => item.valor === mes)?.corto ?? String(mes);
+  }
+
+  private nombreMes(mes: number): string {
+    return this.meses.find((item) => item.valor === mes)?.nombre ?? String(mes);
   }
 
   private porcentajeNumerico(valor: number | null | undefined): number {

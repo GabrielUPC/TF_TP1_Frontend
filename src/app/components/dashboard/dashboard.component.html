@@ -30,8 +30,28 @@
         <input id="ipressFiltro" [value]="ipressAsignada" readonly>
       </div>
 
+      <div class="filter-field file-field">
+        <label for="archivoFiltro">Archivo procesado</label>
+        <select
+          id="archivoFiltro"
+          [(ngModel)]="seleccionArchivo"
+          (ngModelChange)="cambiarArchivoSeleccionado()">
+          <option [ngValue]="'TODOS'">Todos los archivos</option>
+          <option
+            *ngIf="ultimoArchivoProcesado"
+            [ngValue]="'ULTIMO'">
+            Último archivo procesado
+          </option>
+          <option
+            *ngFor="let archivo of archivosProcesados"
+            [ngValue]="archivo.idArchivo">
+            {{ archivo.nombreArchivo }}
+          </option>
+        </select>
+      </div>
+
       <div class="filter-field">
-        <label for="anioFiltro">Año</label>
+        <label for="anioFiltro">Año base</label>
         <select id="anioFiltro" [(ngModel)]="anioFiltro">
           <option [ngValue]="null">Todos</option>
           <option *ngFor="let anio of aniosDisponibles" [ngValue]="anio">{{ anio }}</option>
@@ -39,7 +59,7 @@
       </div>
 
       <div class="filter-field">
-        <label for="mesFiltro">Mes</label>
+        <label for="mesFiltro">Mes base</label>
         <select id="mesFiltro" [(ngModel)]="mesFiltro">
           <option [ngValue]="null">Todos</option>
           <option *ngFor="let mes of meses" [ngValue]="mes.valor">{{ mes.nombre }}</option>
@@ -65,6 +85,11 @@
         </button>
       </div>
     </div>
+  </section>
+
+  <section class="file-context" aria-live="polite">
+    <span>{{ etiquetaArchivoSeleccionado }}</span>
+    <strong>{{ archivoSeleccionadoNombre }}</strong>
   </section>
 
   <div *ngIf="cargando" class="state-card">
@@ -165,8 +190,8 @@
           <div class="risk-topline">
             <span class="risk-icon" aria-hidden="true">!</span>
             <div>
-              <span>Riesgo de insuficiencia</span>
-              <strong>Capacidad asistencial</strong>
+              <span>Riesgo predicho</span>
+              <strong>Siguiente mes</strong>
             </div>
           </div>
 
@@ -191,12 +216,20 @@
 
           <div class="risk-context">
             <div>
-              <span>Servicio crítico</span>
+              <span>Archivo</span>
+              <strong>{{ registroCritico?.nombreArchivo || archivoSeleccionadoNombre }}</strong>
+            </div>
+            <div>
+              <span>Servicio</span>
               <strong>{{ registroCritico?.servicioHospitalario || 'Sin servicio' }}</strong>
             </div>
             <div>
-              <span>Periodo</span>
-              <strong>{{ registroCritico?.mes }}/{{ registroCritico?.anio }}</strong>
+              <span>Periodo base</span>
+              <strong>{{ formatearPeriodoBase(registroCritico) }}</strong>
+            </div>
+            <div>
+              <span>Periodo predicho</span>
+              <strong>{{ formatearPeriodoPredicho(registroCritico) }}</strong>
             </div>
           </div>
 
@@ -284,21 +317,28 @@
             <table class="summary-table">
               <thead>
                 <tr>
+                  <th>Archivo</th>
                   <th>Servicio hospitalario</th>
-                  <th>Periodo</th>
+                  <th>Periodo base</th>
+                  <th>Periodo predicho</th>
                   <th>Ingresos</th>
                   <th>Egresos</th>
                   <th>Pacientes-cama</th>
                   <th>Estancia</th>
                   <th>{{ usaCapacidadMensual ? 'Camas-día' : 'Camas disp.' }}</th>
                   <th>Ocupación</th>
-                  <th>Riesgo</th>
+                  <th>Riesgo predicho</th>
+                  <th>Confianza</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of tablaResumen">
+                  <td class="file-cell" [title]="item.nombreArchivo">
+                    {{ item.nombreArchivo || archivoSeleccionadoNombre || 'Sin archivo' }}
+                  </td>
                   <td><strong>{{ item.servicioHospitalario }}</strong></td>
-                  <td>{{ item.mes }}/{{ item.anio }}</td>
+                  <td>{{ formatearPeriodoBase(item) }}</td>
+                  <td>{{ formatearPeriodoPredicho(item) }}</td>
                   <td>{{ formatearNumero(item.ingresos) }}</td>
                   <td>{{ formatearNumero(item.egresos) }}</td>
                   <td>{{ formatearNumero(item.pacientesCama, 1) }}</td>
@@ -310,6 +350,7 @@
                       {{ item.nivelRiesgo || 'SIN DATOS' }}
                     </span>
                   </td>
+                  <td>{{ formatearPorcentaje(item.probabilidad) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -321,7 +362,7 @@
             <div>
               <span class="section-kicker">Interpretación</span>
               <h2>Variables influyentes</h2>
-              <p>Registro de mayor probabilidad</p>
+              <p>Registro de mayor criticidad</p>
             </div>
           </div>
 
@@ -389,7 +430,10 @@
       </div>
 
       <div class="disclaimer">
-        Este resultado es referencial y sirve como apoyo a la gestión hospitalaria. No reemplaza decisiones clínicas ni asigna camas automáticamente.
+        La predicción se calcula por IPRESS, servicio hospitalario y mes base.
+        El riesgo mostrado corresponde al siguiente mes y sirve como apoyo a la
+        gestión hospitalaria; no reemplaza decisiones clínicas ni asigna camas
+        automáticamente.
       </div>
 
     </ng-container>
