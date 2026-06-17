@@ -50,7 +50,7 @@
         <select [(ngModel)]="filtroRol" (change)="aplicarFiltros()">
           <option value="TODOS">Todos los roles</option>
           <option *ngFor="let rol of roles" [value]="rol.nombreRol">
-            {{ rol.nombreRol }}
+            {{ obtenerNombreRolVisible(rol.nombreRol) }}
           </option>
         </select>
 
@@ -196,7 +196,7 @@
         <select [(ngModel)]="nuevoUsuario.idRol">
           <option [ngValue]="null">Seleccione un rol</option>
           <option *ngFor="let rol of roles" [ngValue]="rol.idRol">
-            {{ rol.nombreRol }}
+            {{ obtenerNombreRolVisible(rol.nombreRol) }}
           </option>
         </select>
       </div>
@@ -240,7 +240,7 @@
         <ul>
           <li *ngFor="let rol of roles">
             <span>▣</span>
-            {{ rol.nombreRol }}
+            {{ obtenerNombreRolVisible(rol.nombreRol) }}
           </li>
         </ul>
       </div>
