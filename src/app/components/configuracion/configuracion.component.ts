@@ -32,7 +32,7 @@ export class ConfiguracionComponent {
       rutaPrincipal: '/usuarios'
     },
     ADMISION_REGISTROS: {
-      alcance: 'Gestiona únicamente la información hospitalaria correspondiente a su IPRESS.',
+      alcance: 'La Oficina de Admisión y Registros Médicos carga, valida, corrige y consulta información hospitalaria de la IPRESS asignada.',
       permisos: [
         'Descargar la plantilla hospitalaria',
         'Cargar y validar archivos Excel',
@@ -43,7 +43,7 @@ export class ConfiguracionComponent {
       rutaPrincipal: '/carga-excel'
     },
     ATENCION_HOSPITALIZACION: {
-      alcance: 'Consulta indicadores y resultados predictivos de la IPRESS asignada.',
+      alcance: 'La Oficina de Atención de Hospitalización consulta indicadores, dashboard, alertas, resultados predictivos y reportes de la IPRESS asignada.',
       permisos: [
         'Consultar el dashboard predictivo',
         'Revisar indicadores hospitalarios y de camas',

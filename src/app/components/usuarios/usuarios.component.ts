@@ -248,7 +248,23 @@ export class UsuariosComponent implements OnInit {
   contarInactivos(): number {
     return this.usuarios.filter(usuario => !usuario.estado).length;
   }
-cambiarEstadoUsuario(usuario: Usuario): void {
+  obtenerNombreRolVisible(nombreRol: string | null | undefined): string {
+  switch (nombreRol) {
+    case 'ADMINISTRADOR':
+      return 'Administrador de la plataforma';
+    case 'ADMISION_REGISTROS':
+      return 'Oficina de Admisión y Registros Médicos';
+    case 'ATENCION_HOSPITALIZACION':
+      return 'Oficina de Atención de Hospitalización';
+    case 'Responsable de información hospitalaria':
+      return 'Oficina de Admisión y Registros Médicos';
+    case 'Responsable de gestión hospitalaria':
+      return 'Oficina de Atención de Hospitalización';
+    default:
+      return nombreRol || 'Sin rol';
+  }
+}
+  cambiarEstadoUsuario(usuario: Usuario): void {
   this.error = '';
   this.mensaje = '';
 

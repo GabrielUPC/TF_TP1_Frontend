@@ -104,15 +104,15 @@ export class AuthService {
   }
 
   private obtenerNombreRol(rol: string): string {
-    switch (rol) {
-      case 'ADMINISTRADOR':
-        return 'Administrador de la plataforma';
-      case 'ADMISION_REGISTROS':
-        return 'Responsable de información hospitalaria';
-      case 'ATENCION_HOSPITALIZACION':
-        return 'Responsable de gestión hospitalaria';
-      default:
-        return rol;
-    }
+  switch (rol) {
+    case 'ADMINISTRADOR':
+      return 'Administrador de la plataforma';
+    case 'ADMISION_REGISTROS':
+      return 'Oficina de Admisión y Registros Médicos';
+    case 'ATENCION_HOSPITALIZACION':
+      return 'Oficina de Atención de Hospitalización';
+    default:
+      return rol;
   }
+}
 }
