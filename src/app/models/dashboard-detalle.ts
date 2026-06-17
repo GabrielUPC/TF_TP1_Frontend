@@ -32,10 +32,13 @@ export interface DashboardDetalle {
 
   // Probabilidad específica de riesgo ALTO
   probabilidadRiesgoAlto?: number | null;
+  
+  riesgoInsuficienciaCapacidad?: number | null;
 
   modeloUtilizado: string;
   fechaPrediccion: string;
 
   alerta: string;
   interpretacion: string;
+  
 }

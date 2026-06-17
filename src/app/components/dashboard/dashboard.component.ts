@@ -264,11 +264,43 @@ private aplicarUltimoArchivoPorDefecto(): void {
   }
 
 get probabilidadCritica(): number {
-  return this.porcentajeNumerico(this.obtenerPorcentajeRiesgoAlto());
+  return this.porcentajeNumerico(this.riesgoInsuficienciaCapacidad);
 }
 
-get porcentajeRiesgoAlto(): number {
-  return this.obtenerPorcentajeRiesgoAlto();
+get riesgoInsuficienciaCapacidad(): number {
+  const registro = this.registroCritico;
+
+  if (!registro) {
+    return 0;
+  }
+
+  if (
+    registro.riesgoInsuficienciaCapacidad !== null &&
+    registro.riesgoInsuficienciaCapacidad !== undefined
+  ) {
+    return registro.riesgoInsuficienciaCapacidad;
+  }
+
+  return this.calcularRiesgoVisualFallback(registro);
+}
+
+private calcularRiesgoVisualFallback(registro: DashboardDetalle): number {
+  const riesgo = registro.nivelRiesgo?.toUpperCase();
+  const confianza = this.porcentajeNumerico(registro.probabilidad) / 100;
+
+  if (riesgo === 'BAJO') {
+    return (1 - confianza) * 0.33;
+  }
+
+  if (riesgo === 'MEDIO') {
+    return 0.33 + confianza * 0.33;
+  }
+
+  if (riesgo === 'ALTO') {
+    return 0.66 + confianza * 0.34;
+  }
+
+  return 0;
 }
 
 private obtenerPorcentajeRiesgoAlto(): number {
