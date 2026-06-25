@@ -244,7 +244,7 @@
           <div>
             <span class="section-kicker">Interpretación operativa</span>
             <h2>Lectura del resultado</h2>
-            <p>Riesgo estimado del siguiente mes según indicadores de demanda y capacidad</p>
+            <p>Interpretación del riesgo estimado con la información disponible de SUSALUD</p>
           </div>
           <strong class="panel-total">{{ nivelBrechaOperativaActual }}</strong>
         </div>
@@ -276,9 +276,48 @@
           </article>
         </div>
 
-        <div class="decision-diagnosis">
+        <div class="decision-diagnosis result-reading">
           <strong>Interpretación operativa</strong>
-          <p>{{ lecturaResultado }}</p>
+          <p *ngFor="let parrafo of lecturaResultado">{{ parrafo }}</p>
+        </div>
+
+        <div class="result-data-block" *ngIf="datosResultado.length > 0">
+          <div class="subpanel-heading">
+            <div>
+              <span class="section-kicker">Datos de apoyo</span>
+              <h3>Datos que explican el resultado</h3>
+              <p>Indicadores principales expresados en lenguaje sencillo</p>
+            </div>
+          </div>
+
+          <div class="result-data-grid">
+            <article class="result-data-card" *ngFor="let dato of datosResultado">
+              <span>{{ dato.nombre }}</span>
+              <strong>{{ dato.valor }}</strong>
+              <p>{{ dato.descripcion }}</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="signals-block" *ngIf="senalesObservadas.length > 0">
+          <div class="subpanel-heading">
+            <div>
+              <span class="section-kicker">Lectura simple</span>
+              <h3>Señales observadas</h3>
+              <p>Máximo cuatro señales para explicar qué está pasando</p>
+            </div>
+          </div>
+
+          <div class="signals-grid">
+            <article
+              class="signal-card"
+              *ngFor="let senal of senalesObservadas"
+              [ngClass]="'signal-' + senal.tipo"
+            >
+              <strong>{{ senal.nombre }}</strong>
+              <p>{{ senal.descripcion }}</p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -366,62 +405,6 @@
           <ul>
             <li *ngFor="let recomendacion of recomendacionesGestion">{{ recomendacion }}</li>
           </ul>
-        </article>
-      </section>
-
-      <section class="table-section">
-        <article class="panel table-panel">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Registros procesados</span>
-              <h2>Resumen por servicio hospitalario</h2>
-              <p>Registros hospitalarios procesados según los filtros seleccionados.</p>
-            </div>
-            <strong class="panel-total">{{ detalle.length }} registros</strong>
-          </div>
-
-          <div class="table-responsive">
-            <table class="summary-table">
-              <thead>
-                <tr>
-                  <th>Archivo</th>
-                  <th>Servicio hospitalario</th>
-                  <th>Periodo base</th>
-                  <th>Periodo predicho</th>
-                  <th>Ingresos</th>
-                  <th>Egresos</th>
-                  <th>Pacientes-cama</th>
-                  <th>Estancia</th>
-                  <th>{{ usaCapacidadMensual ? 'Camas-día disponibles' : 'Camas disponibles' }}</th>
-                  <th>Ocupación</th>
-                  <th>Riesgo estimado</th>
-                  <th>Confianza</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of tablaResumen">
-                  <td class="file-cell" [title]="item.nombreArchivo">
-                    {{ item.nombreArchivo || archivoSeleccionadoNombre || 'Sin archivo' }}
-                  </td>
-                  <td><strong>{{ item.servicioHospitalario }}</strong></td>
-                  <td>{{ formatearPeriodoBase(item) }}</td>
-                  <td>{{ formatearPeriodoPredicho(item) }}</td>
-                  <td>{{ formatearNumero(item.ingresos) }}</td>
-                  <td>{{ formatearNumero(item.egresos) }}</td>
-                  <td>{{ formatearNumero(item.pacientesCama, 1) }}</td>
-                  <td>{{ formatearNumero(item.promedioEstancia, 2) }}</td>
-                  <td>{{ formatearNumero(obtenerCapacidad(item)) }}</td>
-                  <td>{{ formatearOcupacion(item.ocupacionEstimada) }}</td>
-                  <td>
-                    <span class="risk-badge" [ngClass]="obtenerClaseRiesgo(item.nivelRiesgo)">
-                      {{ item.nivelRiesgo || 'SIN DATOS' }}
-                    </span>
-                  </td>
-                  <td>{{ formatearPorcentaje(item.probabilidad) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </article>
       </section>
 
@@ -517,11 +500,8 @@
       </div>
 
       <div class="disclaimer">
-        <strong>El resultado es referencial. No asigna camas automáticamente y no reemplaza decisiones clínicas.</strong>
-        La información se interpreta como mensual, no diaria, no por paciente
-        y no en tiempo real. La predicción se calcula por IPRESS, servicio
-        hospitalario y mes base. El riesgo mostrado corresponde al siguiente
-        mes y sirve como apoyo a la gestión hospitalaria.
+        La predicción es referencial y sirve como apoyo a la revisión hospitalaria.
+        No asigna camas, no decide altas y no reemplaza decisiones clínicas.
       </div>
 
     </ng-container>

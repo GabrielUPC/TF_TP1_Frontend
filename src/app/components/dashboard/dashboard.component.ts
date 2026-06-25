@@ -41,6 +41,18 @@ interface IndicadorExplicado {
   descripcion: string;
 }
 
+interface DatoResultado {
+  nombre: string;
+  valor: string;
+  descripcion: string;
+}
+
+interface SenalObservada {
+  nombre: string;
+  descripcion: string;
+  tipo: 'alto' | 'medio' | 'bajo';
+}
+
 @Component({
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule],
@@ -568,12 +580,136 @@ private obtenerPorcentajeRiesgoAlto(): number {
     return this.diagnosticoOperativo(this.servicioPrioritario);
   }
 
-  get lecturaResultado(): string {
+  get lecturaResultado(): string[] {
     const registro = this.servicioPrioritario;
     if (!registro) {
-      return 'No hay registros hospitalarios procesados para interpretar con los filtros seleccionados.';
+      return [
+        'No hay registros hospitalarios procesados para interpretar con los filtros seleccionados.'
+      ];
     }
-    return `Con la información disponible de SUSALUD, el sistema estima que el servicio de ${registro.servicioHospitalario || 'hospitalización'} podría presentar riesgo ${(registro.nivelRiesgo || 'SIN DATOS').toUpperCase()} de insuficiencia de capacidad asistencial en el siguiente mes. Este resultado se relaciona con la ocupación estimada, la presión ingresos/camas, la estancia promedio y el balance entre ingresos y egresos.`;
+
+    const servicio = registro.servicioHospitalario || 'hospitalización';
+    const riesgo = (registro.nivelRiesgo || 'SIN DATOS').toUpperCase();
+    const confianza = this.formatearPorcentaje(
+      registro.confianzaPrediccion ?? registro.probabilidad
+    );
+    const ingresos = this.formatearNumero(registro.ingresos);
+    const egresos = this.formatearNumero(registro.egresos);
+    const pacientesCama = this.formatearNumero(registro.pacientesCama, 1);
+    const estancia = this.formatearNumero(registro.promedioEstancia, 2);
+    const ocupacion = this.formatearOcupacion(registro.ocupacionEstimada);
+    const presion = this.formatearNumero(registro.presionIngresosCamas, 2);
+
+    return [
+      `Para el siguiente mes, el servicio de ${servicio} presenta riesgo ${riesgo} con una confianza de ${confianza}. Esto significa que, si el comportamiento observado se mantiene, ese servicio podría tener más presión para atender nuevos pacientes con la capacidad disponible. ${this.mensajeSimplePorRiesgo(riesgo)}`,
+      `En el periodo base se registraron ${ingresos} ingresos y ${egresos} egresos. Los ingresos son pacientes que entran al servicio y los egresos son pacientes que salen por alta, traslado, fallecimiento u otro cierre de atención. ${this.mensajeSimpleBalance(registro)}`,
+      `También se registraron ${pacientesCama} pacientes-cama. Este indicador refleja el uso acumulado de camas durante el mes: mientras más alto sea, mayor fue la carga asistencial. Además, la estancia promedio fue de ${estancia} días, es decir, en promedio los pacientes permanecieron ese tiempo en el servicio. ${this.mensajeSimpleEstancia(registro)}`,
+      `La ocupación estimada fue ${ocupacion} y muestra qué tanto se usó la capacidad disponible. ${this.mensajeSimpleOcupacion(registro)} La presión ingresos/camas fue ${presion}; este indicador compara cuántos ingresos hubo frente a la capacidad registrada. ${this.mensajeSimplePresion(registro)}`,
+      'Este resultado no significa que el sistema asigne camas, decida altas o reemplace al personal de salud. Sirve como apoyo para que el usuario revise el servicio con mayor presión, observe si entran más pacientes de los que salen, verifique la información de camas disponibles o habilitadas y coordine la revisión de alertas con las áreas correspondientes.'
+    ];
+  }
+
+  get datosResultado(): DatoResultado[] {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return [];
+    }
+
+    return [
+      {
+        nombre: 'Ingresos',
+        valor: this.formatearNumero(registro.ingresos),
+        descripcion: 'Pacientes que entraron al servicio.'
+      },
+      {
+        nombre: 'Egresos',
+        valor: this.formatearNumero(registro.egresos),
+        descripcion: 'Pacientes que salieron del servicio.'
+      },
+      {
+        nombre: 'Balance',
+        valor: this.formatearNumero(this.balanceIngresosEgresos(registro)),
+        descripcion: 'Diferencia entre ingresos y egresos.'
+      },
+      {
+        nombre: 'Pacientes-cama',
+        valor: this.formatearNumero(registro.pacientesCama, 1),
+        descripcion: 'Uso acumulado de camas durante el mes.'
+      },
+      {
+        nombre: 'Estancia promedio',
+        valor: `${this.formatearNumero(registro.promedioEstancia, 2)} días`,
+        descripcion: 'Días promedio que permanece un paciente.'
+      },
+      {
+        nombre: 'Ocupación estimada',
+        valor: this.formatearOcupacion(registro.ocupacionEstimada),
+        descripcion: 'Nivel de uso de la capacidad.'
+      },
+      {
+        nombre: 'Presión ingresos/camas',
+        valor: this.formatearNumero(registro.presionIngresosCamas, 2),
+        descripcion: 'Relación entre demanda y camas registradas.'
+      },
+      {
+        nombre: 'Camas disponibles/capacidad registrada',
+        valor: this.formatearNumero(this.obtenerCapacidad(registro)),
+        descripcion: 'Capacidad informada para el periodo.'
+      }
+    ];
+  }
+
+  get senalesObservadas(): SenalObservada[] {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return [];
+    }
+
+    const senales: SenalObservada[] = [];
+    if (this.porcentajeOcupacionNumerico(registro.ocupacionEstimada) >= 90) {
+      senales.push({
+        nombre: 'Ocupación crítica',
+        descripcion: 'La capacidad estuvo muy utilizada y queda poco margen para nuevos ingresos.',
+        tipo: 'alto'
+      });
+    }
+    if (this.balanceIngresosEgresos(registro) > 0) {
+      senales.push({
+        nombre: 'Ingresos mayores que egresos',
+        descripcion: 'Entraron más pacientes de los que salieron durante el periodo base.',
+        tipo: 'medio'
+      });
+    }
+    if ((registro.promedioEstancia || 0) > 7) {
+      senales.push({
+        nombre: 'Estancia prolongada',
+        descripcion: 'Los pacientes permanecieron más días y las camas tardaron más en liberarse.',
+        tipo: 'medio'
+      });
+    }
+    if ((registro.presionIngresosCamas || 0) > 1) {
+      senales.push({
+        nombre: 'Alta presión ingresos/camas',
+        descripcion: 'La demanda fue alta frente a la capacidad registrada.',
+        tipo: 'alto'
+      });
+    }
+    if (this.ratioCamasDisponibles(registro) <= 0.10) {
+      senales.push({
+        nombre: 'Capacidad disponible limitada',
+        descripcion: 'La capacidad informada para el periodo fue baja frente a la referencia de camas.',
+        tipo: 'alto'
+      });
+    }
+    if (senales.length === 0) {
+      senales.push({
+        nombre: 'Riesgo controlado',
+        descripcion: 'No se observan señales críticas en los indicadores principales, pero conviene mantener la revisión mensual.',
+        tipo: 'bajo'
+      });
+    }
+
+    return senales.slice(0, 4);
   }
 
   get recomendacionesGestion(): string[] {
@@ -699,16 +835,6 @@ private obtenerPorcentajeRiesgoAlto(): number {
     return candidatos.sort((a, b) => b.valor - a.valor)[0].nombre;
   }
 
-  get tablaResumen(): DashboardDetalle[] {
-    return [...this.detalle]
-      .sort((a, b) => {
-        const periodo = b.anio - a.anio || b.mes - a.mes;
-        return periodo || this.porcentajeNumerico(b.probabilidad)
-          - this.porcentajeNumerico(a.probabilidad);
-      })
-      .slice(0, 12);
-  }
-
   get ultimaActualizacion(): string {
     const fecha = this.registroCritico?.fechaPrediccion;
     if (!fecha) {
@@ -816,6 +942,48 @@ private obtenerPorcentajeRiesgoAlto(): number {
       maximumFractionDigits: decimales,
       minimumFractionDigits: 0
     }).format(valor ?? 0);
+  }
+
+  private mensajeSimplePorRiesgo(riesgo: string): string {
+    if (riesgo === 'ALTO') {
+      return 'Por eso, requiere revisión preferente.';
+    }
+    if (riesgo === 'MEDIO') {
+      return 'Por eso, requiere revisión preventiva.';
+    }
+    if (riesgo === 'BAJO') {
+      return 'El riesgo está controlado, pero debe observarse de forma mensual.';
+    }
+    return 'El nivel de riesgo debe revisarse junto con los datos del periodo.';
+  }
+
+  private mensajeSimpleBalance(item: DashboardDetalle): string {
+    const balance = this.balanceIngresosEgresos(item);
+    if (balance > 0) {
+      return `En este caso, hubo ${this.formatearNumero(balance)} ingresos más que egresos, lo que indica que entraron más pacientes de los que salieron.`;
+    }
+    return 'En este caso, los egresos compensaron los ingresos, lo que indica que la salida de pacientes ayudó a liberar capacidad durante el periodo.';
+  }
+
+  private mensajeSimpleEstancia(item: DashboardDetalle): string {
+    if ((item.promedioEstancia || 0) > 7) {
+      return 'Cuando la estancia supera 7 días, las camas tardan más en liberarse.';
+    }
+    return 'Este valor ayuda a entender cuánto tiempo se mantiene ocupada una cama en promedio.';
+  }
+
+  private mensajeSimpleOcupacion(item: DashboardDetalle): string {
+    if (this.porcentajeOcupacionNumerico(item.ocupacionEstimada) >= 90) {
+      return 'Como fue igual o mayor a 90%, el servicio tuvo poco margen para recibir nuevos pacientes.';
+    }
+    return 'Este valor permite ver si todavía existía margen de capacidad durante el periodo.';
+  }
+
+  private mensajeSimplePresion(item: DashboardDetalle): string {
+    if ((item.presionIngresosCamas || 0) > 1) {
+      return 'Como fue mayor que 1, la demanda fue alta frente a las camas disponibles o habilitadas.';
+    }
+    return 'Cuando este valor no supera 1, la demanda observada fue más manejable frente a la capacidad registrada.';
   }
 
   private recomendacionesPorCausa(causa: string): string[] {

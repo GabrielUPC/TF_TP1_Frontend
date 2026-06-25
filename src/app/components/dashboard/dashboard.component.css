@@ -11,13 +11,26 @@
 .dashboard-page .risk-context{margin-top:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
 .dashboard-page .model-chip{margin-top:auto}
 .dashboard-page .charts-grid,.dashboard-page .insight-grid,.dashboard-page .support-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-bottom:20px}
-.dashboard-page .table-section,.dashboard-page .indicator-section,.dashboard-page .decision-center{margin-bottom:20px}
-.dashboard-page .summary-table{min-width:1200px}
+.dashboard-page .indicator-section,.dashboard-page .decision-center{margin-bottom:20px}
 .dashboard-page .decision-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .dashboard-page .decision-grid article{padding:13px;border:1px solid #e4ebf2;border-radius:13px;background:#fbfdff}
 .dashboard-page .decision-grid span{display:block;color:#677b90;font-size:12px}
 .dashboard-page .decision-grid strong{display:block;margin-top:4px;color:#18324d;font-size:14px}
 .dashboard-page .decision-diagnosis,.dashboard-page .explain-text{margin-top:14px;color:#52677c;font-size:13px;line-height:1.5}
+.dashboard-page .result-reading p{margin:10px 0 0;font-size:14px;line-height:1.65;color:#415a72}
+.dashboard-page .result-data-block,.dashboard-page .signals-block{margin-top:18px}
+.dashboard-page .result-data-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dashboard-page .result-data-card{padding:13px;border:1px solid #e4ebf2;border-radius:13px;background:#fbfdff}
+.dashboard-page .result-data-card span{display:block;color:#1766a8;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+.dashboard-page .result-data-card strong{display:block;margin-top:5px;color:#18324d;font-size:18px;line-height:1.2}
+.dashboard-page .result-data-card p{margin:7px 0 0;color:#677b90;font-size:12px;line-height:1.35}
+.dashboard-page .signals-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dashboard-page .signal-card{padding:13px;border-radius:13px;border:1px solid #e4ebf2;background:#fbfdff}
+.dashboard-page .signal-card strong{display:block;color:#18324d;font-size:13px}
+.dashboard-page .signal-card p{margin:6px 0 0;color:#52677c;font-size:12px;line-height:1.4}
+.dashboard-page .signal-alto{border-color:#f0b5bc;background:#fff6f7}
+.dashboard-page .signal-medio{border-color:#f4d99a;background:#fffaf0}
+.dashboard-page .signal-bajo{border-color:#b9dfc9;background:#f4fbf7}
 .dashboard-page .gap-track{height:16px;border-radius:999px;background:#e8eef5;overflow:hidden}
 .dashboard-page .gap-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2aa66b,#efb23f,#d94352)}
 .dashboard-page .recommendation-box{margin-top:0;padding:18px;border:1px solid #d8e7f6;border-left:5px solid #1769d2;border-radius:15px;background:#f4f9ff}
@@ -35,7 +48,6 @@
 .dashboard-page .variable-panel{position:static}
 .dashboard-page .variable-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
 .dashboard-page .variable-row{min-height:58px;padding:10px 12px;border:1px solid #e7edf3;border-radius:13px;background:#fbfdff}
-.dashboard-page .disclaimer strong{display:block;margin-bottom:6px;color:#735719}
 @media (max-width:1180px){
   .dashboard-page .overview-grid{grid-template-columns:1fr}
   .dashboard-page .overview-grid .risk-card,.dashboard-page .overview-grid .kpi-grid{grid-column:1;min-width:0}
@@ -43,10 +55,11 @@
   .dashboard-page .risk-card{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);column-gap:24px;align-items:center}
   .dashboard-page .risk-topline,.dashboard-page .risk-level,.dashboard-page .probability-block{grid-column:1}
   .dashboard-page .risk-scale,.dashboard-page .risk-context,.dashboard-page .model-chip{grid-column:2}
+  .dashboard-page .result-data-grid,.dashboard-page .signals-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:860px){
   .dashboard-page .charts-grid,.dashboard-page .insight-grid,.dashboard-page .support-grid,.dashboard-page .decision-grid{grid-template-columns:1fr}
-  .dashboard-page .factor-list,.dashboard-page .executive-guide,.dashboard-page .variable-list{grid-template-columns:1fr}
+  .dashboard-page .factor-list,.dashboard-page .executive-guide,.dashboard-page .variable-list,.dashboard-page .result-data-grid,.dashboard-page .signals-grid{grid-template-columns:1fr}
 }
 @media (max-width:620px){
   .dashboard-page .overview-grid .kpi-grid{grid-template-columns:1fr}
