@@ -36,6 +36,27 @@ interface VariableInfluyente {
   tendencia: 'sube' | 'baja' | 'estable';
 }
 
+interface IndicadorExplicado {
+  nombre: string;
+  descripcion: string;
+}
+
+interface ServicioIntervencion {
+  servicio: string;
+  riesgo: string;
+  causa: string;
+  indicadorCritico: string;
+  recomendacion: string;
+  prioridad: number;
+}
+
+interface SimuladorPreventivo {
+  aumentoEgresosPct: number;
+  reduccionEstanciaDias: number;
+  variacionIngresosPct: number;
+  variacionCapacidad: number;
+}
+
 @Component({
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule],
@@ -71,8 +92,36 @@ export class DashboardComponent implements OnInit {
     { valor: 12, nombre: 'Diciembre', corto: 'Dic' }
   ];
 
+  readonly indicadoresExplicados: IndicadorExplicado[] = [
+    {
+      nombre: 'Ocupación estimada',
+      descripcion: 'Pacientes-cama dividido entre la capacidad mensual registrada. Se muestra como porcentaje: 1.4 equivale a 140%.'
+    },
+    {
+      nombre: 'Presión ingresos/camas',
+      descripcion: 'Relaciona los ingresos hospitalarios con las camas informadas para detectar presión de demanda.'
+    },
+    {
+      nombre: 'Camas-día disponibles',
+      descripcion: 'Capacidad mensual registrada por el archivo. En DATASET_D1 ya viene calculada y no se multiplica nuevamente.'
+    },
+    {
+      nombre: 'Promedio de estancia',
+      descripcion: 'Estancias divididas entre egresos. Ayuda a detectar uso prolongado de camas.'
+    }
+  ];
+
   cargando = false;
   error = '';
+  readonly estadosSeguimiento = ['Pendiente', 'En revisión', 'Coordinado'];
+  simulador: SimuladorPreventivo = {
+    aumentoEgresosPct: 0,
+    reduccionEstanciaDias: 0,
+    variacionIngresosPct: 0,
+    variacionCapacidad: 0
+  };
+  private seguimientoAcciones: Record<string, string> = {};
+  private readonly seguimientoStorageKey = 'dashboard_seguimiento_operativo';
 
   constructor(
     private dashboardService: DashboardService,
@@ -81,6 +130,7 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.cargarSeguimientoAcciones();
     this.cargarDashboard();
   }
 
@@ -444,8 +494,8 @@ private obtenerPorcentajeRiesgoAlto(): number {
       },
       {
         nombre: 'Ocupación estimada',
-        valor: this.formatearPorcentaje(registro.ocupacionEstimada),
-        tendencia: this.porcentajeNumerico(registro.ocupacionEstimada) >= 85
+        valor: this.formatearOcupacion(registro.ocupacionEstimada),
+        tendencia: this.porcentajeOcupacionNumerico(registro.ocupacionEstimada) >= 85
           ? 'sube'
           : 'estable'
       },
@@ -472,6 +522,330 @@ private obtenerPorcentajeRiesgoAlto(): number {
         tendencia: 'estable'
       }
     ];
+  }
+
+  get interpretacionRiesgo(): string {
+    const riesgo = this.registroCritico?.nivelRiesgo?.toUpperCase();
+
+    if (riesgo === 'ALTO') {
+      return 'Existe posible insuficiencia de capacidad asistencial para el siguiente mes.';
+    }
+
+    if (riesgo === 'MEDIO') {
+      return 'Existen señales de presión hospitalaria que requieren seguimiento.';
+    }
+
+    if (riesgo === 'BAJO') {
+      return 'La capacidad parece estable frente a la demanda esperada.';
+    }
+
+    return 'Sin riesgo predicho disponible para el registro actual.';
+  }
+
+  get recomendacionRiesgo(): string {
+    const alcance = 'El resultado es referencial. No asigna camas automáticamente y no reemplaza decisiones clínicas.';
+    const riesgo = this.registroCritico?.nivelRiesgo?.toUpperCase();
+
+    if (riesgo === 'ALTO') {
+      return 'Priorizar revisión de camas habilitadas, validar datos cargados, analizar ocupación estimada y coordinar medidas preventivas con el área responsable. ' + alcance;
+    }
+
+    if (riesgo === 'MEDIO') {
+      return 'Revisar indicadores, validar tendencia de ingresos y preparar acciones preventivas. ' + alcance;
+    }
+
+    return 'Mantener monitoreo mensual. ' + alcance;
+  }
+
+  get factoresExplicativos(): string[] {
+    const registro = this.registroCritico;
+    if (!registro) {
+      return [];
+    }
+
+    const factores: string[] = [];
+    const ocupacion = this.porcentajeOcupacionNumerico(registro.ocupacionEstimada);
+    const capacidad = this.obtenerCapacidad(registro);
+
+    if (ocupacion >= 100) {
+      factores.push('El uso acumulado de camas supera la capacidad mensual registrada.');
+    } else if (ocupacion >= 85) {
+      factores.push('La ocupación estimada supera el umbral de presión alta.');
+    } else if (ocupacion >= 70) {
+      factores.push('La ocupación estimada muestra presión moderada.');
+    } else {
+      factores.push('La ocupación estimada se mantiene en un rango bajo o estable.');
+    }
+
+    if ((registro.pacientesCama ?? 0) > capacidad && capacidad > 0) {
+      factores.push('Los pacientes-cama superan las camas-día disponibles del mes.');
+    }
+
+    if ((registro.promedioEstancia ?? 0) > 7) {
+      factores.push('Las estancias hospitalarias reflejan uso prolongado de camas.');
+    }
+
+    if ((registro.presionIngresosCamas ?? 0) >= 1) {
+      factores.push('La presión ingresos/camas indica alta demanda frente a la capacidad registrada.');
+    }
+
+    factores.push('El modelo también considera comportamiento histórico, tendencias y características del servicio.');
+    return factores;
+  }
+
+  get servicioPrioritario(): DashboardDetalle | null {
+    return this.registroCritico;
+  }
+
+  get brechaOperativa(): number {
+    return this.calcularBrechaOperativa(this.servicioPrioritario);
+  }
+
+  get nivelBrechaOperativaActual(): string {
+    return this.nivelBrechaOperativa(this.brechaOperativa);
+  }
+
+  get diagnosticoOperativoActual(): string {
+    return this.diagnosticoOperativo(this.servicioPrioritario);
+  }
+
+  get recomendacionesGestion(): string[] {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return [];
+    }
+    if (registro.recomendacionesOperativas?.length) {
+      return registro.recomendacionesOperativas;
+    }
+    return this.recomendacionesPorCausa(this.causaPrincipalRiesgo(registro));
+  }
+
+  get accionesPrioritarias(): string[] {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return [];
+    }
+    if (registro.accionesPrioritarias?.length) {
+      return registro.accionesPrioritarias;
+    }
+    const acciones = [
+      'Revisar servicio prioritario.',
+      'Revisar causa principal del riesgo.'
+    ];
+    if (this.puntajeRiesgo(registro.nivelRiesgo) >= 2) {
+      acciones.push('Comunicar alerta si el riesgo es medio o alto.');
+    }
+    return acciones;
+  }
+
+  get rankingServiciosIntervencion(): ServicioIntervencion[] {
+    return [...this.detalle]
+      .map((item) => ({
+        servicio: item.servicioHospitalario || 'Sin servicio',
+        riesgo: item.nivelRiesgo || 'SIN DATOS',
+        causa: this.causaPrincipalRiesgo(item),
+        indicadorCritico: this.indicadorMasCritico(item),
+        recomendacion: this.recomendacionBreve(item),
+        prioridad: this.puntajeIntervencion(item)
+      }))
+      .sort((a, b) => b.prioridad - a.prioridad)
+      .slice(0, 5);
+  }
+
+  get ocupacionSimulada(): number {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return 0;
+    }
+    const ingresoFactor = 1 + this.simulador.variacionIngresosPct / 100;
+    const estanciaFactor = Math.max(
+      (registro.promedioEstancia || 0) - this.simulador.reduccionEstanciaDias,
+      0.1
+    ) / Math.max(registro.promedioEstancia || 1, 1);
+    const pacientesCama = (registro.pacientesCama || 0) * ingresoFactor * estanciaFactor;
+    const capacidad = Math.max(this.obtenerCapacidad(registro) + this.simulador.variacionCapacidad, 1);
+    return pacientesCama / capacidad;
+  }
+
+  get presionSimulada(): number {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return 0;
+    }
+    const ingresos = (registro.ingresos || 0) * (1 + this.simulador.variacionIngresosPct / 100);
+    const camas = Math.max((registro.camasTotales || 0) + this.simulador.variacionCapacidad, 1);
+    return ingresos / camas;
+  }
+
+  get balanceSimulado(): number {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return 0;
+    }
+    const ingresos = (registro.ingresos || 0) * (1 + this.simulador.variacionIngresosPct / 100);
+    const egresos = (registro.egresos || 0) * (1 + this.simulador.aumentoEgresosPct / 100);
+    return ingresos - egresos;
+  }
+
+  get mensajeSimulador(): string {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return 'Sin servicio prioritario para simular.';
+    }
+    const mejora = this.ocupacionSimulada < (registro.ocupacionEstimada || 0)
+      && this.presionSimulada <= (registro.presionIngresosCamas || 0)
+      && this.balanceSimulado <= this.balanceIngresosEgresos(registro);
+    const empeora = this.ocupacionSimulada > (registro.ocupacionEstimada || 0)
+      || this.presionSimulada > (registro.presionIngresosCamas || 0)
+      || this.balanceSimulado > this.balanceIngresosEgresos(registro);
+    if (mejora) {
+      return 'El escenario simulado mejora la presión operativa.';
+    }
+    if (empeora) {
+      return 'El escenario simulado empeora o incrementa la presión operativa.';
+    }
+    return 'El escenario simulado se mantiene cercano a la situación actual.';
+  }
+
+  balanceIngresosEgresos(item: DashboardDetalle | null | undefined): number {
+    return (item?.ingresos || 0) - (item?.egresos || 0);
+  }
+
+  relacionEgresosIngresos(item: DashboardDetalle | null | undefined): number {
+    if (!item?.ingresos) {
+      return 0;
+    }
+    return (item.egresos || 0) / item.ingresos;
+  }
+
+  margenOcupacion(item: DashboardDetalle | null | undefined): number {
+    return 1 - (item?.ocupacionEstimada || 0);
+  }
+
+  calcularBrechaOperativa(item: DashboardDetalle | null | undefined): number {
+    if (!item) {
+      return 0;
+    }
+    if (item.brechaOperativa !== null && item.brechaOperativa !== undefined) {
+      return item.brechaOperativa;
+    }
+    let puntaje = 0;
+    if (this.puntajeRiesgo(item.nivelRiesgo) === 3) {
+      puntaje += 30;
+    } else if (this.puntajeRiesgo(item.nivelRiesgo) === 2) {
+      puntaje += 15;
+    }
+    if ((item.ocupacionEstimada || 0) >= 0.90) {
+      puntaje += 25;
+    } else if ((item.ocupacionEstimada || 0) >= 0.80) {
+      puntaje += 15;
+    }
+    if ((item.presionIngresosCamas || 0) > 1) {
+      puntaje += 15;
+    }
+    if (this.balanceIngresosEgresos(item) > 0) {
+      puntaje += 10;
+    }
+    if ((item.promedioEstancia || 0) > 7) {
+      puntaje += 10;
+    }
+    if ((item.rotacionCamas || 0) < 1) {
+      puntaje += 5;
+    }
+    if (this.ratioCamasDisponibles(item) <= 0.10) {
+      puntaje += 10;
+    }
+    return Math.min(puntaje, 100);
+  }
+
+  nivelBrechaOperativa(valor: number): string {
+    if (valor >= 70) {
+      return 'Brecha crítica';
+    }
+    if (valor >= 40) {
+      return 'Brecha en observación';
+    }
+    return 'Brecha controlada';
+  }
+
+  causaPrincipalRiesgo(item: DashboardDetalle | null | undefined): string {
+    if (!item) {
+      return 'Sin datos';
+    }
+    if (item.causaPrincipalRiesgo) {
+      return item.causaPrincipalRiesgo;
+    }
+    if ((item.ocupacionEstimada || 0) >= 0.90) {
+      return 'Ocupación crítica';
+    }
+    if (this.ratioCamasDisponibles(item) <= 0.10) {
+      return 'Capacidad disponible limitada';
+    }
+    if (this.balanceIngresosEgresos(item) > 0) {
+      return 'Demanda supera egresos';
+    }
+    if ((item.promedioEstancia || 0) > 7) {
+      return 'Estancia prolongada';
+    }
+    if ((item.presionIngresosCamas || 0) > 1) {
+      return 'Alta presión ingresos/camas';
+    }
+    if ((item.rotacionCamas || 0) < 1) {
+      return 'Baja rotación de camas';
+    }
+    return 'Riesgo controlado';
+  }
+
+  diagnosticoOperativo(item: DashboardDetalle | null | undefined): string {
+    if (!item) {
+      return 'No hay servicio prioritario para diagnosticar.';
+    }
+    if (item.diagnosticoOperativo) {
+      return item.diagnosticoOperativo;
+    }
+    return `Para el siguiente mes, el servicio evaluado presenta riesgo ${(item.nivelRiesgo || 'SIN DATOS').toUpperCase()} de insuficiencia de capacidad asistencial. La causa principal identificada es ${this.causaPrincipalRiesgo(item).toLowerCase()}. Esto indica que la demanda hospitalaria podría ejercer presión sobre la capacidad registrada si la tendencia continúa.`;
+  }
+
+  indicadorMasCritico(item: DashboardDetalle | null | undefined): string {
+    if (!item) {
+      return 'Sin datos';
+    }
+    const candidatos = [
+      { nombre: 'Ocupación estimada', valor: this.porcentajeOcupacionNumerico(item.ocupacionEstimada) },
+      { nombre: 'Presión ingresos/camas', valor: (item.presionIngresosCamas || 0) * 100 },
+      { nombre: 'Balance ingresos-egresos', valor: Math.max(this.balanceIngresosEgresos(item), 0) * 5 },
+      { nombre: 'Promedio de estancia', valor: (item.promedioEstancia || 0) * 10 }
+    ];
+    return candidatos.sort((a, b) => b.valor - a.valor)[0].nombre;
+  }
+
+  recomendacionBreve(item: DashboardDetalle | null | undefined): string {
+    const causa = this.causaPrincipalRiesgo(item);
+    if (causa === 'Ocupación crítica') {
+      return 'Revisar altas pendientes y seguimiento de camas liberadas.';
+    }
+    if (causa === 'Demanda supera egresos') {
+      return 'Coordinar seguimiento de egresos y revisar demoras administrativas.';
+    }
+    if (causa === 'Estancia prolongada') {
+      return 'Identificar permanencias elevadas y revisar demoras operativas.';
+    }
+    if (causa === 'Capacidad disponible limitada') {
+      return 'Verificar camas disponibles o habilitadas registradas.';
+    }
+    return 'Mantener monitoreo preventivo del servicio.';
+  }
+
+  estadoSeguimiento(recomendacion: string): string {
+    return this.seguimientoAcciones[this.claveSeguimiento(recomendacion)] || 'Pendiente';
+  }
+
+  actualizarSeguimiento(recomendacion: string, estado: string): void {
+    this.seguimientoAcciones[this.claveSeguimiento(recomendacion)] = estado;
+    localStorage.setItem(
+      this.seguimientoStorageKey,
+      JSON.stringify(this.seguimientoAcciones)
+    );
   }
 
   get tablaResumen(): DashboardDetalle[] {
@@ -562,12 +936,22 @@ private obtenerPorcentajeRiesgoAlto(): number {
   }
 
   obtenerMensajeAlerta(item: DashboardDetalle): string {
+    if (this.puntajeRiesgo(item.nivelRiesgo) >= 2) {
+      return `${item.servicioHospitalario}: riesgo ${item.nivelRiesgo} por `
+        + `${this.causaPrincipalRiesgo(item).toLowerCase()}. Acción sugerida: `
+        + this.recomendacionBreve(item);
+    }
+
     if (item.alerta?.trim()) {
       return item.alerta;
     }
 
-    return `${this.formatearPorcentaje(item.ocupacionEstimada)} de ocupación y `
+    return `${this.formatearOcupacion(item.ocupacionEstimada)} de ocupación y `
       + `${this.formatearNumero(item.presionIngresosCamas, 2)} de presión ingresos/camas.`;
+  }
+
+  formatearOcupacion(valor: number | null | undefined): string {
+    return `${this.porcentajeOcupacionNumerico(valor).toFixed(1)}%`;
   }
 
   formatearPorcentaje(valor: number | null | undefined): string {
@@ -582,6 +966,86 @@ private obtenerPorcentajeRiesgoAlto(): number {
       maximumFractionDigits: decimales,
       minimumFractionDigits: 0
     }).format(valor ?? 0);
+  }
+
+  private recomendacionesPorCausa(causa: string): string[] {
+    if (causa === 'Ocupación crítica') {
+      return [
+        'Activar seguimiento operativo del servicio.',
+        'Revisar disponibilidad registrada y posibles camas no operativas.',
+        'Verificar que las camas liberadas sean reportadas oportunamente.',
+        'Comunicar alerta a gestión hospitalaria y servicios involucrados.'
+      ];
+    }
+    if (causa === 'Demanda supera egresos') {
+      return [
+        'Revisar si los egresos programados compensan los ingresos esperados.',
+        'Coordinar seguimiento de altas próximas.',
+        'Revisar posibles demoras administrativas en egresos.',
+        'Priorizar monitoreo del servicio.'
+      ];
+    }
+    if (causa === 'Estancia prolongada') {
+      return [
+        'Identificar pacientes con permanencia elevada.',
+        'Revisar posibles demoras en exámenes, interconsultas, trámites o traslados.',
+        'Coordinar seguimiento de pacientes con estancia prolongada.',
+        'Evaluar impacto de la estancia en la rotación de camas.'
+      ];
+    }
+    if (causa === 'Capacidad disponible limitada') {
+      return [
+        'Verificar actualización de camas disponibles o habilitadas.',
+        'Revisar si existen camas bloqueadas, en mantenimiento o no reportadas.',
+        'Comunicar la limitación a gestión hospitalaria.'
+      ];
+    }
+    return [
+      'Mantener monitoreo mensual del servicio.',
+      'Revisar indicadores de demanda y capacidad antes del siguiente mes.',
+      'Registrar acciones preventivas si el riesgo aumenta.'
+    ];
+  }
+
+  private puntajeIntervencion(item: DashboardDetalle): number {
+    return this.puntajeRiesgo(item.nivelRiesgo) * 30
+      + this.porcentajeNumerico(item.probabilidad) * 0.25
+      + this.porcentajeOcupacionNumerico(item.ocupacionEstimada) * 0.2
+      + (item.presionIngresosCamas || 0) * 10
+      + Math.max(this.balanceIngresosEgresos(item), 0)
+      + (item.promedioEstancia || 0);
+  }
+
+  private ratioCamasDisponibles(item: DashboardDetalle | null | undefined): number {
+    if (!item || !item.camasTotales || item.camasTotales <= 0) {
+      return 1;
+    }
+    const capacidadMensual = item.camasTotales * this.diasDelMes(item.anio, item.mes);
+    if (capacidadMensual <= 0) {
+      return 1;
+    }
+    return this.obtenerCapacidad(item) / capacidadMensual;
+  }
+
+  private diasDelMes(anio: number, mes: number): number {
+    return new Date(anio, mes, 0).getDate();
+  }
+
+  private claveSeguimiento(recomendacion: string): string {
+    const registro = this.servicioPrioritario;
+    const servicio = registro?.servicioHospitalario || 'sin-servicio';
+    const periodo = this.formatearPeriodoPredicho(registro).toLowerCase();
+    return `${servicio}|${periodo}|${recomendacion}`;
+  }
+
+  private cargarSeguimientoAcciones(): void {
+    try {
+      this.seguimientoAcciones = JSON.parse(
+        localStorage.getItem(this.seguimientoStorageKey) || '{}'
+      );
+    } catch {
+      this.seguimientoAcciones = {};
+    }
   }
 
   private get escalaOcupacionMax(): number {
@@ -613,7 +1077,7 @@ private obtenerPorcentajeRiesgoAlto(): number {
         mes: item.mes,
         valores: []
       };
-      grupo.valores.push(this.porcentajeNumerico(item.ocupacionEstimada));
+      grupo.valores.push(this.porcentajeOcupacionNumerico(item.ocupacionEstimada));
       grupos.set(clave, grupo);
     });
 
@@ -640,6 +1104,13 @@ private obtenerPorcentajeRiesgoAlto(): number {
       return 0;
     }
     return valor <= 1 ? valor * 100 : valor;
+  }
+
+  private porcentajeOcupacionNumerico(valor: number | null | undefined): number {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
+      return 0;
+    }
+    return valor * 100;
   }
 
   private puntajeRiesgo(nivelRiesgo: string | null | undefined): number {

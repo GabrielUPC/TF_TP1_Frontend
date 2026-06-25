@@ -31,6 +31,8 @@ export interface DashboardDetalle {
   probabilidad: number;
 
   // Probabilidad específica de riesgo ALTO
+  probabilidadRiesgoBajo?: number | null;
+  probabilidadRiesgoMedio?: number | null;
   probabilidadRiesgoAlto?: number | null;
   
   riesgoInsuficienciaCapacidad?: number | null;
@@ -40,5 +42,13 @@ export interface DashboardDetalle {
 
   alerta: string;
   interpretacion: string;
+  causaPrincipalRiesgo?: string | null;
+  brechaOperativa?: number | null;
+  nivelBrechaOperativa?: string | null;
+  diagnosticoOperativo?: string | null;
+  recomendacionesOperativas?: string[] | null;
+  accionesPrioritarias?: string[] | null;
+  interpretacionModelo?: string | null;
+  confianzaPrediccion?: number | null;
   
 }
