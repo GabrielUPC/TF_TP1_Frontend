@@ -47,7 +47,6 @@ export interface DashboardDetalle {
   nivelBrechaOperativa?: string | null;
   diagnosticoOperativo?: string | null;
   recomendacionesOperativas?: string[] | null;
-  accionesPrioritarias?: string[] | null;
   interpretacionModelo?: string | null;
   confianzaPrediccion?: number | null;
   

@@ -242,16 +242,16 @@
       <section class="decision-center panel">
         <div class="panel-heading">
           <div>
-            <span class="section-kicker">OE2</span>
-            <h2>Centro de decisión operativa</h2>
-            <p>Prioriza acciones preventivas frente al riesgo del siguiente mes</p>
+            <span class="section-kicker">Interpretación operativa</span>
+            <h2>Lectura del resultado</h2>
+            <p>Riesgo estimado del siguiente mes según indicadores de demanda y capacidad</p>
           </div>
           <strong class="panel-total">{{ nivelBrechaOperativaActual }}</strong>
         </div>
 
         <div class="decision-grid" *ngIf="servicioPrioritario as servicio">
           <article>
-            <span>Servicio prioritario</span>
+            <span>Servicio hospitalario</span>
             <strong>{{ servicio.servicioHospitalario || 'Sin servicio' }}</strong>
           </article>
           <article>
@@ -277,62 +277,9 @@
         </div>
 
         <div class="decision-diagnosis">
-          <strong>Diagnóstico operativo</strong>
-          <p>{{ diagnosticoOperativoActual }}</p>
+          <strong>Interpretación operativa</strong>
+          <p>{{ lecturaResultado }}</p>
         </div>
-      </section>
-
-      <section class="operational-grid">
-        <article class="panel gap-card">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Brecha operativa</span>
-              <h2>{{ brechaOperativa }}/100</h2>
-              <p>{{ nivelBrechaOperativaActual }}</p>
-            </div>
-          </div>
-          <div class="gap-track">
-            <span [style.width.%]="brechaOperativa"></span>
-          </div>
-          <p class="explain-text">
-            La brecha operativa representa el nivel de presión entre la demanda hospitalaria y la capacidad registrada. No significa falta exacta de camas en tiempo real, sino una señal preventiva para priorizar gestión.
-          </p>
-        </article>
-
-        <article class="panel action-card">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Plan de acción sugerido</span>
-              <h2>Acciones preventivas</h2>
-            </div>
-          </div>
-          <div class="action-columns">
-            <div>
-              <strong>Hoy</strong>
-              <ul>
-                <li>Revisar servicio prioritario.</li>
-                <li>Revisar causa principal del riesgo.</li>
-                <li>Comunicar alerta si el riesgo es medio o alto.</li>
-              </ul>
-            </div>
-            <div>
-              <strong>Esta semana</strong>
-              <ul>
-                <li>Coordinar revisión de egresos y estancias prolongadas.</li>
-                <li>Verificar actualización de camas disponibles o habilitadas.</li>
-                <li>Revisar servicios con ocupación alta.</li>
-              </ul>
-            </div>
-            <div>
-              <strong>Antes del siguiente mes</strong>
-              <ul>
-                <li>Preparar seguimiento preventivo del servicio crítico.</li>
-                <li>Coordinar con hospitalización, emergencia, admisión y enfermería.</li>
-                <li>Monitorear si las acciones reducen presión, ocupación o estancia.</li>
-              </ul>
-            </div>
-          </div>
-        </article>
       </section>
 
       <section class="charts-grid">
@@ -403,7 +350,7 @@
           <div class="panel-heading">
             <div>
               <span class="section-kicker">Lectura del modelo</span>
-              <h2>Factores que explican el riesgo</h2>
+              <h2>Factores asociados al riesgo</h2>
               <p>Registro de mayor criticidad del periodo actual</p>
             </div>
           </div>
@@ -414,43 +361,21 @@
         </article>
 
         <article class="panel recommendation-box" *ngIf="registroCritico">
-          <span>Recomendación del sistema</span>
+          <span>Recomendaciones generales de apoyo</span>
           <strong>{{ interpretacionRiesgo }}</strong>
-          <p>{{ recomendacionRiesgo }}</p>
+          <ul>
+            <li *ngFor="let recomendacion of recomendacionesGestion">{{ recomendacion }}</li>
+          </ul>
         </article>
-      </section>
-
-      <section class="ranking-section panel">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Priorización</span>
-            <h2>Ranking de servicios a intervenir</h2>
-            <p>Top 5 según riesgo, probabilidad, ocupación, presión, balance y estancia</p>
-          </div>
-        </div>
-
-        <div class="ranking-list">
-          <article *ngFor="let item of rankingServiciosIntervencion">
-            <div>
-              <strong>{{ item.servicio }}</strong>
-              <span>{{ item.riesgo }} · {{ item.causa }}</span>
-            </div>
-            <div>
-              <span>Indicador crítico</span>
-              <strong>{{ item.indicadorCritico }}</strong>
-            </div>
-            <p>{{ item.recomendacion }}</p>
-          </article>
-        </div>
       </section>
 
       <section class="table-section">
         <article class="panel table-panel">
           <div class="panel-heading">
             <div>
-              <span class="section-kicker">Detalle operativo</span>
+              <span class="section-kicker">Registros procesados</span>
               <h2>Resumen por servicio hospitalario</h2>
-              <p>Últimos {{ tablaResumen.length }} registros del resultado actual</p>
+              <p>Registros hospitalarios procesados según los filtros seleccionados.</p>
             </div>
             <strong class="panel-total">{{ detalle.length }} registros</strong>
           </div>
@@ -467,13 +392,9 @@
                   <th>Egresos</th>
                   <th>Pacientes-cama</th>
                   <th>Estancia</th>
-                  <th>{{ usaCapacidadMensual ? 'Camas-día' : 'Camas disp.' }}</th>
+                  <th>{{ usaCapacidadMensual ? 'Camas-día disponibles' : 'Camas disponibles' }}</th>
                   <th>Ocupación</th>
-                  <th>Balance ingresos-egresos</th>
-                  <th>Causa principal</th>
-                  <th>Prioridad de intervención</th>
-                  <th>Recomendación breve</th>
-                  <th>Riesgo predicho</th>
+                  <th>Riesgo estimado</th>
                   <th>Confianza</th>
                 </tr>
               </thead>
@@ -491,10 +412,6 @@
                   <td>{{ formatearNumero(item.promedioEstancia, 2) }}</td>
                   <td>{{ formatearNumero(obtenerCapacidad(item)) }}</td>
                   <td>{{ formatearOcupacion(item.ocupacionEstimada) }}</td>
-                  <td>{{ formatearNumero(balanceIngresosEgresos(item)) }}</td>
-                  <td>{{ causaPrincipalRiesgo(item) }}</td>
-                  <td>{{ nivelBrechaOperativa(calcularBrechaOperativa(item)) }}</td>
-                  <td>{{ recomendacionBreve(item) }}</td>
                   <td>
                     <span class="risk-badge" [ngClass]="obtenerClaseRiesgo(item.nivelRiesgo)">
                       {{ item.nivelRiesgo || 'SIN DATOS' }}
@@ -508,87 +425,12 @@
         </article>
       </section>
 
-      <section class="simulator-section panel">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Escenarios</span>
-            <h2>Simulador preventivo</h2>
-            <p>Explora escenarios operativos sin cambiar la predicción oficial</p>
-          </div>
-        </div>
-
-        <div class="simulator-grid">
-          <label>
-            Aumento estimado de egresos (%)
-            <input type="number" [(ngModel)]="simulador.aumentoEgresosPct">
-          </label>
-          <label>
-            Reducción estimada de estancia promedio (días)
-            <input type="number" [(ngModel)]="simulador.reduccionEstanciaDias">
-          </label>
-          <label>
-            Variación estimada de ingresos (%)
-            <input type="number" [(ngModel)]="simulador.variacionIngresosPct">
-          </label>
-          <label>
-            Variación de camas habilitadas o capacidad registrada
-            <input type="number" [(ngModel)]="simulador.variacionCapacidad">
-          </label>
-        </div>
-
-        <div class="simulation-results">
-          <article>
-            <span>Ocupación estimada simulada</span>
-            <strong>{{ formatearOcupacion(ocupacionSimulada) }}</strong>
-          </article>
-          <article>
-            <span>Presión ingresos/camas simulada</span>
-            <strong>{{ formatearNumero(presionSimulada, 2) }}</strong>
-          </article>
-          <article>
-            <span>Balance ingresos-egresos simulado</span>
-            <strong>{{ formatearNumero(balanceSimulado) }}</strong>
-          </article>
-          <article>
-            <span>Resultado</span>
-            <strong>{{ mensajeSimulador }}</strong>
-          </article>
-        </div>
-
-        <p class="explain-text">
-          Este simulador es referencial. No cambia la predicción oficial del modelo. Sirve para explorar escenarios operativos antes del siguiente mes.
-        </p>
-      </section>
-
-      <section class="tracking-section panel">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Seguimiento</span>
-            <h2>Seguimiento de acciones</h2>
-            <p>Estados guardados localmente por servicio, periodo predicho y recomendación</p>
-          </div>
-        </div>
-
-        <div class="tracking-list">
-          <article *ngFor="let recomendacion of recomendacionesGestion">
-            <span>{{ recomendacion }}</span>
-            <select
-              [ngModel]="estadoSeguimiento(recomendacion)"
-              (ngModelChange)="actualizarSeguimiento(recomendacion, $event)">
-              <option *ngFor="let estado of estadosSeguimiento" [value]="estado">
-                {{ estado }}
-              </option>
-            </select>
-          </article>
-        </div>
-      </section>
-
       <section class="indicator-section panel">
         <div class="panel-heading">
           <div>
-            <span class="section-kicker">Guía rápida</span>
+            <span class="section-kicker">Lectura de indicadores</span>
             <h2>¿Qué significan los indicadores?</h2>
-            <p>Lectura operacional de los campos principales del dashboard</p>
+            <p>Información mensual de hospitalización procesada para apoyar la revisión hospitalaria.</p>
           </div>
         </div>
 
@@ -662,18 +504,6 @@
             </article>
           </div>
         </article>
-      </section>
-
-      <section class="help-section panel">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Valor para gestión</span>
-            <h2>Cómo esta plataforma ayuda</h2>
-          </div>
-        </div>
-        <p>
-          La plataforma ayuda porque transforma datos mensuales de hospitalización y camas en un diagnóstico operativo del siguiente mes. Permite identificar servicios con mayor presión, explicar la causa del riesgo, priorizar acciones y realizar seguimiento preventivo. No crea camas ni reemplaza decisiones clínicas, pero ayuda a usar mejor la capacidad registrada y anticipar posibles escenarios de saturación.
-        </p>
       </section>
 
       <div class="info-note">
