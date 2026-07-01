@@ -160,7 +160,7 @@
           </div>
 
           <div class="model-chip">
-            Modelo usado: {{ registroCritico?.modeloUtilizado || 'XGBoost - FastAPI' }}
+            Modelo usado: {{ registroCritico?.modeloUtilizado || 'Modelo predictivo configurado' }}
           </div>
         </article>
 
@@ -244,7 +244,7 @@
           <div>
             <span class="section-kicker">Interpretación operativa</span>
             <h2>Lectura del resultado</h2>
-            <p>Interpretación del riesgo estimado con la información disponible de SUSALUD</p>
+            <p>Interpretación del riesgo estimado con la información hospitalaria cargada y procesada.</p>
           </div>
           <strong class="panel-total">{{ nivelBrechaOperativaActual }}</strong>
         </div>
@@ -455,10 +455,10 @@
         </article>
 
         <article class="panel recommendation-box" *ngIf="registroCritico">
-          <span>Recomendaciones generales de apoyo</span>
+          <span>Resumen operativo</span>
           <strong>{{ interpretacionRiesgo }}</strong>
           <ul>
-            <li *ngFor="let recomendacion of recomendacionesGestion">{{ recomendacion }}</li>
+            <li *ngFor="let item of resumenOperativo">{{ item }}</li>
           </ul>
         </article>
       </section>

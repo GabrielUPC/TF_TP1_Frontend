@@ -721,15 +721,35 @@ private obtenerPorcentajeRiesgoAlto(): number {
     return senales.slice(0, 4);
   }
 
-  get recomendacionesGestion(): string[] {
+  get resumenOperativo(): string[] {
     const registro = this.servicioPrioritario;
     if (!registro) {
       return [];
     }
-    if (registro.recomendacionesOperativas?.length) {
-      return registro.recomendacionesOperativas;
+    const causa = this.causaPrincipalRiesgo(registro);
+    const accionesCriticas = this.accionesSugeridasGestion.filter(
+      (accion) => accion.estado === 'Crítico'
+    ).length;
+    const accionesObservacion = this.accionesSugeridasGestion.filter(
+      (accion) => accion.estado === 'En observación'
+    ).length;
+
+    if (accionesCriticas > 0) {
+      return [
+        `La causa principal visible es ${causa.toLowerCase()}.`,
+        `Hay ${accionesCriticas} indicador(es) en estado crítico; revise primero las acciones con prioridad alta.`
+      ];
     }
-    return this.recomendacionesPorCausa(this.causaPrincipalRiesgo(registro));
+    if (accionesObservacion > 0) {
+      return [
+        `La causa principal visible es ${causa.toLowerCase()}.`,
+        `Hay ${accionesObservacion} indicador(es) en observación; conviene revisar responsables y prioridad sugerida.`
+      ];
+    }
+    return [
+      'Los indicadores principales se mantienen sin señales críticas visibles.',
+      'Mantenga la revisión mensual de la información hospitalaria cargada y procesada.'
+    ];
   }
 
   get accionesSugeridasGestion(): AccionGestion[] {
@@ -1160,49 +1180,6 @@ private obtenerPorcentajeRiesgoAlto(): number {
       responsable: 'Admisión / Hospitalización',
       prioridad: 'Baja'
     };
-  }
-
-  private recomendacionesPorCausa(causa: string): string[] {
-    if (causa === 'Ocupación crítica') {
-      return [
-        'Hospitalización debe verificar disponibilidad/capacidad registrada y revisar servicios con alta ocupación.',
-        'Gestión de Camas debe generar reporte de ocupación para coordinación con hospitalización o jefatura.',
-        'El responsable del servicio debe contrastar ocupación estimada con camas disponibles o habilitadas.'
-      ];
-    }
-    if (causa === 'Demanda supera egresos') {
-      return [
-        'Admisión y Registros Médicos deben verificar egresos pendientes de registro.',
-        'El responsable del servicio debe revisar acumulación de pacientes cuando los ingresos superan los egresos.',
-        'Admisión debe coordinar actualización de registros del periodo base.'
-      ];
-    }
-    if (causa === 'Estancia prolongada') {
-      return [
-        'El servicio asistencial debe coordinar revisión de casos con permanencia prolongada.',
-        'Hospitalización debe contrastar estancia promedio con disponibilidad/capacidad registrada.',
-        'La jefatura del servicio debe revisar causas administrativas o asistenciales de permanencia prolongada.'
-      ];
-    }
-    if (causa === 'Capacidad disponible limitada') {
-      return [
-        'Admisión y Hospitalización deben verificar si las camas habilitadas están actualizadas.',
-        'Hospitalización debe revisar si existen camas bloqueadas, inoperativas o no registradas correctamente.',
-        'El responsable del servicio debe validar la capacidad registrada del periodo.'
-      ];
-    }
-    if (causa === 'Alta presión ingresos/camas') {
-      return [
-        'Gestión de Camas debe revisar el servicio con mayor presión ingresos/camas.',
-        'Hospitalización debe revisar tendencia de ingresos y sustentar coordinación preventiva.',
-        'El responsable del servicio debe comparar demanda observada con camas disponibles o habilitadas.'
-      ];
-    }
-    return [
-      'El responsable hospitalario debe mantener actualización mensual de ingresos, egresos y camas disponibles.',
-      'Hospitalización debe revisar si algún servicio pasa a estado de observación o crítico.',
-      'Admisión y Registros Médicos deben mantener conciliación mensual de registros hospitalarios.'
-    ];
   }
 
   private esCausaVisiblePermitida(causa: string): boolean {
