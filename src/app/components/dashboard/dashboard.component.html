@@ -213,9 +213,9 @@
           <article class="kpi-card tone-emerald">
             <span class="kpi-symbol">CD</span>
             <div>
-              <span>{{ usaCapacidadMensual ? 'Capacidad mensual registrada' : 'Camas disponibles' }}</span>
+              <span>Camas disponibles</span>
               <strong>{{ formatearNumero(capacidadRegistrada) }}</strong>
-              <small>{{ usaCapacidadMensual ? 'Camas-día disponibles' : 'Camas habilitadas' }}</small>
+              <small>Capacidad informada</small>
             </div>
           </article>
 
@@ -318,6 +318,61 @@
               <p>{{ senal.descripcion }}</p>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section class="management-actions panel" *ngIf="accionesSugeridasGestion.length > 0">
+        <div class="panel-heading">
+          <div>
+            <span class="section-kicker">Gestión hospitalaria</span>
+            <h2>Acciones sugeridas para gestión hospitalaria</h2>
+            <p>
+              Acciones de revisión derivadas de los indicadores alterados.
+              No reemplazan decisiones clínicas ni asignan camas automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <div class="management-actions-grid">
+          <article class="management-action-card" *ngFor="let accion of accionesSugeridasGestion">
+            <div class="action-card-top">
+              <div>
+                <span>Indicador</span>
+                <strong>{{ accion.indicador }}</strong>
+              </div>
+              <span class="status-pill" [ngClass]="obtenerClaseEstadoAccion(accion.estado)">
+                {{ accion.estado }}
+              </span>
+            </div>
+
+            <div class="action-metrics">
+              <div>
+                <span>Valor</span>
+                <strong>{{ accion.valor }}</strong>
+              </div>
+              <div>
+                <span>Prioridad</span>
+                <strong class="priority-pill" [ngClass]="obtenerClasePrioridadAccion(accion.prioridad)">
+                  {{ accion.prioridad }}
+                </strong>
+              </div>
+            </div>
+
+            <div class="action-detail">
+              <span>Causa interpretada</span>
+              <p>{{ accion.causa }}</p>
+            </div>
+
+            <div class="action-detail">
+              <span>Acción sugerida</span>
+              <p>{{ accion.accion }}</p>
+            </div>
+
+            <div class="action-detail">
+              <span>Responsable sugerido</span>
+              <p>{{ accion.responsable }}</p>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -490,13 +545,9 @@
       </section>
 
       <div class="info-note">
-        <strong>Información de capacidad:</strong>
-        <span *ngIf="usaCapacidadMensual">
-          la capacidad corresponde a camas-día disponibles registradas para el mes; no se multiplica nuevamente.
-        </span>
-        <span *ngIf="!usaCapacidadMensual">
-          se muestran las camas disponibles o habilitadas informadas en los registros.
-        </span>
+        <strong>Alcance de la plataforma:</strong>
+        La plataforma no muestra camas libres en tiempo real; anticipa presión mensual por servicio
+        a partir de información consolidada.
       </div>
 
       <div class="disclaimer">

@@ -53,6 +53,16 @@ interface SenalObservada {
   tipo: 'alto' | 'medio' | 'bajo';
 }
 
+interface AccionGestion {
+  indicador: string;
+  valor: string;
+  estado: 'Normal' | 'En observación' | 'Crítico';
+  causa: string;
+  accion: string;
+  responsable: string;
+  prioridad: 'Baja' | 'Media' | 'Alta';
+}
+
 @Component({
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule],
@@ -98,8 +108,8 @@ export class DashboardComponent implements OnInit {
       descripcion: 'Relaciona los ingresos hospitalarios con las camas informadas para detectar presión de demanda.'
     },
     {
-      nombre: 'Camas-día disponibles',
-      descripcion: 'Capacidad mensual registrada. Cuando viene informada como camas-día disponibles, se muestra sin recalcularla.'
+      nombre: 'Camas disponibles',
+      descripcion: 'Camas informadas como disponibles o habilitadas.'
     },
     {
       nombre: 'Promedio de estancia',
@@ -501,9 +511,7 @@ private obtenerPorcentajeRiesgoAlto(): number {
         tendencia: registro.presionIngresosCamas > 1 ? 'sube' : 'estable'
       },
       {
-        nombre: this.usaCapacidadMensual
-          ? 'Camas-día disponibles'
-          : 'Camas disponibles',
+        nombre: 'Camas disponibles',
         valor: this.formatearNumero(this.obtenerCapacidad(registro)),
         tendencia: 'estable'
       }
@@ -588,24 +596,25 @@ private obtenerPorcentajeRiesgoAlto(): number {
       ];
     }
 
-    const servicio = registro.servicioHospitalario || 'hospitalización';
     const riesgo = (registro.nivelRiesgo || 'SIN DATOS').toUpperCase();
-    const confianza = this.formatearPorcentaje(
-      registro.confianzaPrediccion ?? registro.probabilidad
-    );
-    const ingresos = this.formatearNumero(registro.ingresos);
-    const egresos = this.formatearNumero(registro.egresos);
-    const pacientesCama = this.formatearNumero(registro.pacientesCama, 1);
-    const estancia = this.formatearNumero(registro.promedioEstancia, 2);
-    const ocupacion = this.formatearOcupacion(registro.ocupacionEstimada);
-    const presion = this.formatearNumero(registro.presionIngresosCamas, 2);
+    if (riesgo === 'ALTO') {
+      return [
+        'Este servicio puede tener dificultades para recibir nuevos pacientes el siguiente mes. La señal principal es que las camas se usan mucho o tardan en liberarse, por eso conviene revisarlo con anticipación.'
+      ];
+    }
+    if (riesgo === 'MEDIO') {
+      return [
+        'Este servicio muestra señales de presión para el siguiente mes. Conviene observar si las camas siguen ocupándose rápido o si los pacientes permanecen varios días.'
+      ];
+    }
+    if (riesgo === 'BAJO') {
+      return [
+        'Este servicio no muestra señales importantes de presión para el siguiente mes. La capacidad parece estable, pero debe seguir monitoreándose.'
+      ];
+    }
 
     return [
-      `Para el siguiente mes, el servicio de ${servicio} presenta riesgo ${riesgo} con una confianza de ${confianza}. Esto significa que, si el comportamiento observado se mantiene, ese servicio podría tener más presión para atender nuevos pacientes con la capacidad disponible. ${this.mensajeSimplePorRiesgo(riesgo)}`,
-      `En el periodo base se registraron ${ingresos} ingresos y ${egresos} egresos. Los ingresos son pacientes que entran al servicio y los egresos son pacientes que salen por alta, traslado, fallecimiento u otro cierre de atención. ${this.mensajeSimpleBalance(registro)}`,
-      `También se registraron ${pacientesCama} pacientes-cama. Este indicador refleja el uso acumulado de camas durante el mes: mientras más alto sea, mayor fue la carga asistencial. Además, la estancia promedio fue de ${estancia} días, es decir, en promedio los pacientes permanecieron ese tiempo en el servicio. ${this.mensajeSimpleEstancia(registro)}`,
-      `La ocupación estimada fue ${ocupacion} y muestra qué tanto se usó la capacidad disponible. ${this.mensajeSimpleOcupacion(registro)} La presión ingresos/camas fue ${presion}; este indicador compara cuántos ingresos hubo frente a la capacidad registrada. ${this.mensajeSimplePresion(registro)}`,
-      'Este resultado no significa que el sistema asigne camas, decida altas o reemplace al personal de salud. Sirve como apoyo para que el usuario revise el servicio con mayor presión, observe si entran más pacientes de los que salen, verifique la información de camas disponibles o habilitadas y coordine la revisión de alertas con las áreas correspondientes.'
+      'No hay un nivel de riesgo suficiente para interpretar el resultado. Revise la información mensual de hospitalización disponible.'
     ];
   }
 
@@ -617,19 +626,19 @@ private obtenerPorcentajeRiesgoAlto(): number {
 
     return [
       {
-        nombre: 'Ingresos',
+        nombre: 'Ingresos hospitalarios',
         valor: this.formatearNumero(registro.ingresos),
         descripcion: 'Pacientes que entraron al servicio.'
       },
       {
-        nombre: 'Egresos',
+        nombre: 'Egresos hospitalarios',
         valor: this.formatearNumero(registro.egresos),
         descripcion: 'Pacientes que salieron del servicio.'
       },
       {
-        nombre: 'Balance',
+        nombre: 'Balance ingresos-egresos',
         valor: this.formatearNumero(this.balanceIngresosEgresos(registro)),
-        descripcion: 'Diferencia entre ingresos y egresos.'
+        descripcion: 'Muestra si entraron más pacientes de los que salieron.'
       },
       {
         nombre: 'Pacientes-cama',
@@ -639,22 +648,22 @@ private obtenerPorcentajeRiesgoAlto(): number {
       {
         nombre: 'Estancia promedio',
         valor: `${this.formatearNumero(registro.promedioEstancia, 2)} días`,
-        descripcion: 'Días promedio que permanece un paciente.'
+        descripcion: 'Tiempo promedio que un paciente permanece en el servicio.'
       },
       {
         nombre: 'Ocupación estimada',
         valor: this.formatearOcupacion(registro.ocupacionEstimada),
-        descripcion: 'Nivel de uso de la capacidad.'
+        descripcion: 'Indica qué tanto se usó la capacidad disponible.'
       },
       {
         nombre: 'Presión ingresos/camas',
         valor: this.formatearNumero(registro.presionIngresosCamas, 2),
-        descripcion: 'Relación entre demanda y camas registradas.'
+        descripcion: 'Compara los ingresos con las camas disponibles o habilitadas.'
       },
       {
-        nombre: 'Camas disponibles/capacidad registrada',
+        nombre: 'Camas disponibles',
         valor: this.formatearNumero(this.obtenerCapacidad(registro)),
-        descripcion: 'Capacidad informada para el periodo.'
+        descripcion: 'Camas informadas como disponibles o habilitadas.'
       }
     ];
   }
@@ -723,6 +732,20 @@ private obtenerPorcentajeRiesgoAlto(): number {
     return this.recomendacionesPorCausa(this.causaPrincipalRiesgo(registro));
   }
 
+  get accionesSugeridasGestion(): AccionGestion[] {
+    const registro = this.servicioPrioritario;
+    if (!registro) {
+      return [];
+    }
+    return [
+      this.accionPorOcupacion(registro),
+      this.accionPorEstancia(registro),
+      this.accionPorBalance(registro),
+      this.accionPorPresion(registro),
+      this.accionPorCapacidad(registro)
+    ];
+  }
+
   balanceIngresosEgresos(item: DashboardDetalle | null | undefined): number {
     return (item?.ingresos || 0) - (item?.egresos || 0);
   }
@@ -765,9 +788,6 @@ private obtenerPorcentajeRiesgoAlto(): number {
     if ((item.promedioEstancia || 0) > 7) {
       puntaje += 10;
     }
-    if ((item.rotacionCamas || 0) < 1) {
-      puntaje += 5;
-    }
     if (this.ratioCamasDisponibles(item) <= 0.10) {
       puntaje += 10;
     }
@@ -788,7 +808,8 @@ private obtenerPorcentajeRiesgoAlto(): number {
     if (!item) {
       return 'Sin datos';
     }
-    if (item.causaPrincipalRiesgo) {
+    if (item.causaPrincipalRiesgo
+        && this.esCausaVisiblePermitida(item.causaPrincipalRiesgo)) {
       return item.causaPrincipalRiesgo;
     }
     if ((item.ocupacionEstimada || 0) >= 0.90) {
@@ -805,9 +826,6 @@ private obtenerPorcentajeRiesgoAlto(): number {
     }
     if ((item.presionIngresosCamas || 0) > 1) {
       return 'Alta presión ingresos/camas';
-    }
-    if ((item.rotacionCamas || 0) < 1) {
-      return 'Baja rotación de camas';
     }
     return 'Riesgo controlado';
   }
@@ -912,6 +930,26 @@ private obtenerPorcentajeRiesgoAlto(): number {
     return 'riesgo-bajo';
   }
 
+  obtenerClaseEstadoAccion(estado: AccionGestion['estado']): string {
+    if (estado === 'Crítico') {
+      return 'estado-critico';
+    }
+    if (estado === 'En observación') {
+      return 'estado-observacion';
+    }
+    return 'estado-normal';
+  }
+
+  obtenerClasePrioridadAccion(prioridad: AccionGestion['prioridad']): string {
+    if (prioridad === 'Alta') {
+      return 'prioridad-alta';
+    }
+    if (prioridad === 'Media') {
+      return 'prioridad-media';
+    }
+    return 'prioridad-baja';
+  }
+
   obtenerMensajeAlerta(item: DashboardDetalle): string {
     if (this.puntajeRiesgo(item.nivelRiesgo) >= 2) {
       return `${item.servicioHospitalario}: riesgo ${item.nivelRiesgo} por `
@@ -944,82 +982,238 @@ private obtenerPorcentajeRiesgoAlto(): number {
     }).format(valor ?? 0);
   }
 
-  private mensajeSimplePorRiesgo(riesgo: string): string {
-    if (riesgo === 'ALTO') {
-      return 'Por eso, requiere revisión preferente.';
+  private accionPorOcupacion(item: DashboardDetalle): AccionGestion {
+    const ocupacion = this.porcentajeOcupacionNumerico(item.ocupacionEstimada);
+    if (ocupacion >= 90) {
+      return {
+        indicador: 'Ocupación estimada',
+        valor: this.formatearOcupacion(item.ocupacionEstimada),
+        estado: 'Crítico',
+        causa: 'La ocupación supera el umbral crítico y deja poco margen para nuevos ingresos.',
+        accion: 'Verificar disponibilidad/capacidad registrada, revisar servicios con alta ocupación y generar reporte para coordinación con hospitalización o jefatura.',
+        responsable: 'Responsable de Hospitalización / Gestión de Camas',
+        prioridad: 'Alta'
+      };
     }
-    if (riesgo === 'MEDIO') {
-      return 'Por eso, requiere revisión preventiva.';
+    if (ocupacion >= 80) {
+      return {
+        indicador: 'Ocupación estimada',
+        valor: this.formatearOcupacion(item.ocupacionEstimada),
+        estado: 'En observación',
+        causa: 'La ocupación se acerca al umbral crítico y puede reducir el margen de atención.',
+        accion: 'Revisar tendencia de ocupación del servicio y preparar reporte mensual para hospitalización.',
+        responsable: 'Responsable de Hospitalización / Gestión de Camas',
+        prioridad: 'Media'
+      };
     }
-    if (riesgo === 'BAJO') {
-      return 'El riesgo está controlado, pero debe observarse de forma mensual.';
-    }
-    return 'El nivel de riesgo debe revisarse junto con los datos del periodo.';
+    return {
+      indicador: 'Ocupación estimada',
+      valor: this.formatearOcupacion(item.ocupacionEstimada),
+      estado: 'Normal',
+      causa: 'La ocupación se mantiene por debajo del umbral de observación.',
+      accion: 'Mantener actualización mensual de ocupación y capacidad registrada.',
+      responsable: 'Responsable de Hospitalización',
+      prioridad: 'Baja'
+    };
   }
 
-  private mensajeSimpleBalance(item: DashboardDetalle): string {
+  private accionPorEstancia(item: DashboardDetalle): AccionGestion {
+    const estancia = item.promedioEstancia || 0;
+    const prioridadCritica: AccionGestion['prioridad'] =
+      this.puntajeRiesgo(item.nivelRiesgo) >= 3 ? 'Alta' : 'Media';
+    if (estancia > 7) {
+      return {
+        indicador: 'Promedio de estancia',
+        valor: `${this.formatearNumero(estancia, 2)} días`,
+        estado: 'Crítico',
+        causa: 'La estancia promedio supera 7 días y puede retrasar la liberación de camas.',
+        accion: 'Coordinar revisión de casos con permanencia prolongada con el equipo asistencial responsable, sin sugerir altas automáticas.',
+        responsable: 'Servicio asistencial / Hospitalización',
+        prioridad: prioridadCritica
+      };
+    }
+    if (estancia >= 5) {
+      return {
+        indicador: 'Promedio de estancia',
+        valor: `${this.formatearNumero(estancia, 2)} días`,
+        estado: 'En observación',
+        causa: 'La estancia promedio está entre 5 y 7 días y debe revisarse por servicio.',
+        accion: 'Revisar casos con permanencia cercana al umbral y coordinar actualización con el servicio asistencial.',
+        responsable: 'Servicio asistencial / Hospitalización',
+        prioridad: 'Media'
+      };
+    }
+    return {
+      indicador: 'Promedio de estancia',
+      valor: `${this.formatearNumero(estancia, 2)} días`,
+      estado: 'Normal',
+      causa: 'La estancia promedio está por debajo del umbral de observación.',
+      accion: 'Mantener revisión mensual de estancia promedio por servicio.',
+      responsable: 'Servicio asistencial',
+      prioridad: 'Baja'
+    };
+  }
+
+  private accionPorBalance(item: DashboardDetalle): AccionGestion {
     const balance = this.balanceIngresosEgresos(item);
+    const ingresos = item.ingresos || 0;
+    const umbralCritico = Math.max(5, ingresos * 0.1);
+    if (balance >= umbralCritico && balance > 0) {
+      return {
+        indicador: 'Balance ingresos-egresos',
+        valor: this.formatearNumero(balance),
+        estado: 'Crítico',
+        causa: 'Los ingresos superan a los egresos y muestran acumulación importante de pacientes.',
+        accion: 'Verificar egresos pendientes de registro, revisar acumulación de pacientes y coordinar actualización con admisión o registros médicos.',
+        responsable: 'Admisión y Registros Médicos',
+        prioridad: 'Alta'
+      };
+    }
     if (balance > 0) {
-      return `En este caso, hubo ${this.formatearNumero(balance)} ingresos más que egresos, lo que indica que entraron más pacientes de los que salieron.`;
+      return {
+        indicador: 'Balance ingresos-egresos',
+        valor: this.formatearNumero(balance),
+        estado: 'En observación',
+        causa: 'Los ingresos superan a los egresos, aunque la acumulación es moderada.',
+        accion: 'Verificar egresos pendientes de registro y revisar acumulación moderada con admisión o registros médicos.',
+        responsable: 'Admisión y Registros Médicos',
+        prioridad: 'Media'
+      };
     }
-    return 'En este caso, los egresos compensaron los ingresos, lo que indica que la salida de pacientes ayudó a liberar capacidad durante el periodo.';
+    return {
+      indicador: 'Balance ingresos-egresos',
+      valor: this.formatearNumero(balance),
+      estado: 'Normal',
+      causa: 'Los egresos compensan los ingresos del periodo.',
+      accion: 'Mantener conciliación mensual entre ingresos y egresos registrados.',
+      responsable: 'Admisión y Registros Médicos',
+      prioridad: 'Baja'
+    };
   }
 
-  private mensajeSimpleEstancia(item: DashboardDetalle): string {
-    if ((item.promedioEstancia || 0) > 7) {
-      return 'Cuando la estancia supera 7 días, las camas tardan más en liberarse.';
+  private accionPorPresion(item: DashboardDetalle): AccionGestion {
+    const presion = item.presionIngresosCamas || 0;
+    if (presion > 1) {
+      return {
+        indicador: 'Presión ingresos/camas',
+        valor: this.formatearNumero(presion, 2),
+        estado: 'Crítico',
+        causa: 'La demanda supera la referencia de camas registradas.',
+        accion: 'Priorizar seguimiento del servicio con mayor presión, revisar tendencia de ingresos y sustentar coordinación preventiva.',
+        responsable: 'Responsable de Hospitalización / Gestión de Camas',
+        prioridad: 'Alta'
+      };
     }
-    return 'Este valor ayuda a entender cuánto tiempo se mantiene ocupada una cama en promedio.';
+    if (presion > 0.7) {
+      return {
+        indicador: 'Presión ingresos/camas',
+        valor: this.formatearNumero(presion, 2),
+        estado: 'En observación',
+        causa: 'La presión se acerca al nivel crítico y debe revisarse junto con ingresos y capacidad.',
+        accion: 'Revisar tendencia de ingresos y preparar sustento mensual para coordinación preventiva.',
+        responsable: 'Responsable de Hospitalización / Gestión de Camas',
+        prioridad: 'Media'
+      };
+    }
+    return {
+      indicador: 'Presión ingresos/camas',
+      valor: this.formatearNumero(presion, 2),
+      estado: 'Normal',
+      causa: 'La presión se mantiene dentro del rango esperado.',
+      accion: 'Mantener revisión mensual de ingresos frente a camas registradas.',
+      responsable: 'Responsable de Hospitalización',
+      prioridad: 'Baja'
+    };
   }
 
-  private mensajeSimpleOcupacion(item: DashboardDetalle): string {
-    if (this.porcentajeOcupacionNumerico(item.ocupacionEstimada) >= 90) {
-      return 'Como fue igual o mayor a 90%, el servicio tuvo poco margen para recibir nuevos pacientes.';
+  private accionPorCapacidad(item: DashboardDetalle): AccionGestion {
+    const ratio = this.ratioCamasDisponibles(item);
+    const valor = `${this.formatearNumero(this.obtenerCapacidad(item))} (${this.formatearPorcentaje(ratio)})`;
+    if (ratio <= 0.10) {
+      return {
+        indicador: 'Capacidad registrada / camas disponibles',
+        valor,
+        estado: 'Crítico',
+        causa: 'El ratio de camas disponibles es igual o menor a 10%.',
+        accion: 'Verificar si las camas habilitadas están actualizadas y si existen camas bloqueadas, inoperativas o no registradas correctamente.',
+        responsable: 'Admisión / Hospitalización',
+        prioridad: 'Alta'
+      };
     }
-    return 'Este valor permite ver si todavía existía margen de capacidad durante el periodo.';
-  }
-
-  private mensajeSimplePresion(item: DashboardDetalle): string {
-    if ((item.presionIngresosCamas || 0) > 1) {
-      return 'Como fue mayor que 1, la demanda fue alta frente a las camas disponibles o habilitadas.';
+    if (ratio <= 0.20) {
+      return {
+        indicador: 'Capacidad registrada / camas disponibles',
+        valor,
+        estado: 'En observación',
+        causa: 'El ratio de camas disponibles es bajo y requiere revisión del registro de capacidad.',
+        accion: 'Verificar actualización de camas habilitadas y revisar posibles inconsistencias en la capacidad registrada.',
+        responsable: 'Admisión / Hospitalización',
+        prioridad: 'Media'
+      };
     }
-    return 'Cuando este valor no supera 1, la demanda observada fue más manejable frente a la capacidad registrada.';
+    return {
+      indicador: 'Capacidad registrada / camas disponibles',
+      valor,
+      estado: 'Normal',
+      causa: 'El ratio de camas disponibles se mantiene por encima del umbral de observación.',
+      accion: 'Mantener actualización mensual de camas disponibles o habilitadas.',
+      responsable: 'Admisión / Hospitalización',
+      prioridad: 'Baja'
+    };
   }
 
   private recomendacionesPorCausa(causa: string): string[] {
     if (causa === 'Ocupación crítica') {
       return [
-        'Se recomienda revisar los servicios con riesgo medio o alto.',
-        'Puede considerarse verificar la actualización de camas disponibles o habilitadas.',
-        'Conviene observar la ocupación estimada y la presión ingresos/camas.'
+        'Hospitalización debe verificar disponibilidad/capacidad registrada y revisar servicios con alta ocupación.',
+        'Gestión de Camas debe generar reporte de ocupación para coordinación con hospitalización o jefatura.',
+        'El responsable del servicio debe contrastar ocupación estimada con camas disponibles o habilitadas.'
       ];
     }
     if (causa === 'Demanda supera egresos') {
       return [
-        'Se recomienda revisar la relación entre ingresos y egresos hospitalarios.',
-        'Puede considerarse observar servicios con mayor diferencia ingresos-egresos.',
-        'El resultado puede apoyar la coordinación hospitalaria correspondiente.'
+        'Admisión y Registros Médicos deben verificar egresos pendientes de registro.',
+        'El responsable del servicio debe revisar acumulación de pacientes cuando los ingresos superan los egresos.',
+        'Admisión debe coordinar actualización de registros del periodo base.'
       ];
     }
     if (causa === 'Estancia prolongada') {
       return [
-        'Conviene observar servicios con estancia promedio prolongada.',
-        'Se recomienda revisar el efecto de la estancia sobre la rotación de camas.',
-        'El resultado puede apoyar la revisión de indicadores de demanda y capacidad.'
+        'El servicio asistencial debe coordinar revisión de casos con permanencia prolongada.',
+        'Hospitalización debe contrastar estancia promedio con disponibilidad/capacidad registrada.',
+        'La jefatura del servicio debe revisar causas administrativas o asistenciales de permanencia prolongada.'
       ];
     }
     if (causa === 'Capacidad disponible limitada') {
       return [
-        'Puede considerarse verificar la actualización de camas disponibles o habilitadas.',
-        'Se recomienda revisar la capacidad mensual registrada.',
-        'Conviene observar si la capacidad disponible se mantiene baja en el periodo.'
+        'Admisión y Hospitalización deben verificar si las camas habilitadas están actualizadas.',
+        'Hospitalización debe revisar si existen camas bloqueadas, inoperativas o no registradas correctamente.',
+        'El responsable del servicio debe validar la capacidad registrada del periodo.'
+      ];
+    }
+    if (causa === 'Alta presión ingresos/camas') {
+      return [
+        'Gestión de Camas debe revisar el servicio con mayor presión ingresos/camas.',
+        'Hospitalización debe revisar tendencia de ingresos y sustentar coordinación preventiva.',
+        'El responsable del servicio debe comparar demanda observada con camas disponibles o habilitadas.'
       ];
     }
     return [
-      'Se recomienda revisar servicios con riesgo medio o alto.',
-      'Puede considerarse verificar la actualización de camas disponibles o habilitadas.',
-      'Conviene observar servicios con estancia promedio prolongada.'
+      'El responsable hospitalario debe mantener actualización mensual de ingresos, egresos y camas disponibles.',
+      'Hospitalización debe revisar si algún servicio pasa a estado de observación o crítico.',
+      'Admisión y Registros Médicos deben mantener conciliación mensual de registros hospitalarios.'
     ];
+  }
+
+  private esCausaVisiblePermitida(causa: string): boolean {
+    return [
+      'Ocupación crítica',
+      'Capacidad disponible limitada',
+      'Demanda supera egresos',
+      'Estancia prolongada',
+      'Alta presión ingresos/camas',
+      'Riesgo controlado'
+    ].includes(causa);
   }
 
   private ratioCamasDisponibles(item: DashboardDetalle | null | undefined): number {
