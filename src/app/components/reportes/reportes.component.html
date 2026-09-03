@@ -166,7 +166,7 @@
             <th>Periodo base</th>
             <th>Periodo predicho</th>
             <th>Riesgo predicho</th>
-            <th>Confianza del modelo</th>
+            <th>Probabilidad de la clase predicha</th>
             <th>Ocupación</th>
             <th>Presión ingresos/camas</th>
             <th>Promedio estancia</th>
@@ -193,7 +193,7 @@
                 {{ reporte.nivelRiesgo || 'SIN DATOS' }}
               </span>
             </td>
-            <td>{{ convertirPorcentaje(reporte.probabilidad) }}</td>
+            <td>{{ formatearProbabilidad(reporte.probabilidad) }}</td>
             <td>{{ convertirPorcentaje(reporte.ocupacionEstimada) }}</td>
             <td>{{ formatearNumero(reporte.presionIngresosCamas) }}</td>
             <td>{{ formatearNumero(reporte.promedioEstancia) }}</td>

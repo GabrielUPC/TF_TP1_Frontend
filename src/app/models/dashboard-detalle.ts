@@ -27,14 +27,15 @@ export interface DashboardDetalle {
 
   nivelRiesgo: string;
 
-  // Probabilidad de la clase predicha: BAJO, MEDIO o ALTO
-  probabilidad: number;
+  // Probabilidad de la clase FINAL recibida; no necesariamente max(p).
+  probabilidad: number | null;
 
-  // Probabilidad específica de riesgo ALTO
+  // Salidas originales por clase; pueden faltar en registros históricos.
   probabilidadRiesgoBajo?: number | null;
   probabilidadRiesgoMedio?: number | null;
   probabilidadRiesgoAlto?: number | null;
   
+  // Índice visual/operativo legado, no probabilidad calibrada de insuficiencia.
   riesgoInsuficienciaCapacidad?: number | null;
 
   modeloUtilizado: string;

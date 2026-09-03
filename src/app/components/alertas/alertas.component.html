@@ -117,8 +117,12 @@
           <div class="indicadores-grid">
 
             <div class="indicador-item">
-              <span>Probabilidad</span>
-              <strong>{{ convertirPorcentaje(alerta.probabilidad) }}</strong>
+              <span>Probabilidad de la clase predicha</span>
+              <strong>{{ formatearProbabilidad(alerta.probabilidad) }}</strong>
+            </div>
+            <div class="indicador-item">
+              <span>Probabilidad de riesgo Alto</span>
+              <strong>{{ formatearProbabilidad(alerta.probabilidadRiesgoAlto) }}</strong>
             </div>
 
             <div class="indicador-item">

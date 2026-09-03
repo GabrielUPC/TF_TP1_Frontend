@@ -218,6 +218,12 @@ export class ReportesComponent implements OnInit {
     return `${porcentaje.toFixed(1)}%`;
   }
 
+  formatearProbabilidad(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)
+        || valor < 0 || valor > 1) return 'N/D';
+    return `${(valor * 100).toFixed(1)}%`;
+  }
+
   formatearNumero(
     valor: number | null | undefined,
     decimales = 2
@@ -241,7 +247,7 @@ export class ReportesComponent implements OnInit {
       'Periodo base',
       'Periodo predicho',
       'Riesgo predicho',
-      'Confianza del modelo',
+      'Probabilidad de la clase predicha',
       'Ocupación',
       'Presión ingresos/camas',
       'Promedio estancia',
@@ -258,7 +264,7 @@ export class ReportesComponent implements OnInit {
       this.formatearPeriodoBase(reporte),
       this.formatearPeriodoPredicho(reporte),
       reporte.nivelRiesgo,
-      this.convertirPorcentaje(reporte.probabilidad),
+      this.formatearProbabilidad(reporte.probabilidad),
       this.convertirPorcentaje(reporte.ocupacionEstimada),
       this.formatearNumero(reporte.presionIngresosCamas),
       this.formatearNumero(reporte.promedioEstancia),

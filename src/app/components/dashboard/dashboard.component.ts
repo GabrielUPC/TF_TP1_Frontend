@@ -309,65 +309,16 @@ private aplicarUltimoArchivoPorDefecto(): void {
     })[0];
   }
 
-get probabilidadCritica(): number {
-  return this.porcentajeNumerico(this.riesgoInsuficienciaCapacidad);
+get probabilidadCritica(): number | null {
+  const indice = this.riesgoInsuficienciaCapacidad;
+  return indice === null ? null : indice * 100;
 }
 
-get riesgoInsuficienciaCapacidad(): number {
-  const registro = this.registroCritico;
-
-  if (!registro) {
-    return 0;
-  }
-
-  if (
-    registro.riesgoInsuficienciaCapacidad !== null &&
-    registro.riesgoInsuficienciaCapacidad !== undefined
-  ) {
-    return registro.riesgoInsuficienciaCapacidad;
-  }
-
-  return this.calcularRiesgoVisualFallback(registro);
-}
-
-private calcularRiesgoVisualFallback(registro: DashboardDetalle): number {
-  const riesgo = registro.nivelRiesgo?.toUpperCase();
-  const confianza = this.porcentajeNumerico(registro.probabilidad) / 100;
-
-  if (riesgo === 'BAJO') {
-    return (1 - confianza) * 0.33;
-  }
-
-  if (riesgo === 'MEDIO') {
-    return 0.33 + confianza * 0.33;
-  }
-
-  if (riesgo === 'ALTO') {
-    return 0.66 + confianza * 0.34;
-  }
-
-  return 0;
-}
-
-private obtenerPorcentajeRiesgoAlto(): number {
-  const registro = this.registroCritico;
-
-  if (!registro) {
-    return 0;
-  }
-
-  if (
-    registro.probabilidadRiesgoAlto !== null &&
-    registro.probabilidadRiesgoAlto !== undefined
-  ) {
-    return registro.probabilidadRiesgoAlto;
-  }
-
-  if (registro.nivelRiesgo?.toUpperCase() === 'ALTO') {
-    return registro.probabilidad;
-  }
-
-  return 0;
+get riesgoInsuficienciaCapacidad(): number | null {
+  // Índice operativo recibido; no fabricar un valor a partir del nivel o confianza.
+  const valor = this.registroCritico?.riesgoInsuficienciaCapacidad;
+  return valor !== null && valor !== undefined && Number.isFinite(valor)
+    && valor >= 0 && valor <= 1 ? valor : null;
 }
   get totalIngresos(): number {
     return this.sumar(this.detalle.map((item) => item.ingresos));
@@ -947,7 +898,7 @@ private obtenerPorcentajeRiesgoAlto(): number {
     if (riesgo === 'MEDIO') {
       return 'riesgo-medio';
     }
-    return 'riesgo-bajo';
+    return riesgo === 'BAJO' ? 'riesgo-bajo' : '';
   }
 
   obtenerClaseEstadoAccion(estado: AccionGestion['estado']): string {
@@ -989,7 +940,14 @@ private obtenerPorcentajeRiesgoAlto(): number {
   }
 
   formatearPorcentaje(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) return 'N/D';
     return `${this.porcentajeNumerico(valor).toFixed(1)}%`;
+  }
+
+  formatearProbabilidad(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)
+        || valor < 0 || valor > 1) return 'N/D';
+    return `${(valor * 100).toFixed(1)}%`;
   }
 
   formatearNumero(

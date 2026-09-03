@@ -116,7 +116,7 @@
           <div class="risk-topline">
             <span class="risk-icon" aria-hidden="true">!</span>
             <div>
-              <span>Riesgo predicho</span>
+              <span>Nivel de riesgo predicho</span>
               <strong>Siguiente mes</strong>
             </div>
           </div>
@@ -124,7 +124,7 @@
           <div class="risk-level">{{ registroCritico?.nivelRiesgo || 'SIN DATOS' }}</div>
 
           <div class="probability-block">
-            <span>Riesgo de insuficiencia asistencial</span>
+            <span>Índice operativo de riesgo</span>
             <strong>{{ formatearPorcentaje(riesgoInsuficienciaCapacidad) }}</strong>
           </div>
 
@@ -133,7 +133,7 @@
               <span class="scale-low"></span>
               <span class="scale-medium"></span>
               <span class="scale-high"></span>
-              <i [style.left.%]="probabilidadCritica"></i>
+              <i *ngIf="probabilidadCritica !== null" [style.left.%]="probabilidadCritica"></i>
             </div>
             <div class="scale-labels">
               <span>Bajo</span><span>Medio</span><span>Alto</span>
@@ -141,6 +141,14 @@
           </div>
 
           <div class="risk-context">
+            <div>
+              <span>Probabilidad de la clase predicha</span>
+              <strong>{{ formatearProbabilidad(registroCritico?.probabilidad) }}</strong>
+            </div>
+            <div>
+              <span>Probabilidad de riesgo Alto</span>
+              <strong>{{ formatearProbabilidad(registroCritico?.probabilidadRiesgoAlto) }}</strong>
+            </div>
             <div>
               <span>Periodo base</span>
               <strong>{{ formatearPeriodoBase(registroCritico) }}</strong>
@@ -267,8 +275,12 @@
             <strong>{{ servicio.nivelRiesgo || 'SIN DATOS' }}</strong>
           </article>
           <article>
-            <span>Confianza</span>
-            <strong>{{ formatearPorcentaje(servicio.confianzaPrediccion ?? servicio.probabilidad) }}</strong>
+            <span>Probabilidad de la clase predicha</span>
+            <strong>{{ formatearProbabilidad(servicio.probabilidad) }}</strong>
+          </article>
+          <article>
+            <span>Probabilidades por clase</span>
+            <strong>Bajo: {{ formatearProbabilidad(servicio.probabilidadRiesgoBajo) }} · Medio: {{ formatearProbabilidad(servicio.probabilidadRiesgoMedio) }} · Alto: {{ formatearProbabilidad(servicio.probabilidadRiesgoAlto) }}</strong>
           </article>
           <article>
             <span>Causa principal</span>
@@ -493,7 +505,7 @@
           <div class="variable-summary" *ngIf="registroCritico">
             <span>Servicio analizado</span>
             <strong>{{ registroCritico.servicioHospitalario }}</strong>
-            <small>Confianza {{ formatearPorcentaje(registroCritico.probabilidad) }}</small>
+            <small>Probabilidad de la clase predicha: {{ formatearProbabilidad(registroCritico.probabilidad) }}</small>
           </div>
 
           <div class="variable-list" *ngIf="variablesInfluyentes.length > 0">
