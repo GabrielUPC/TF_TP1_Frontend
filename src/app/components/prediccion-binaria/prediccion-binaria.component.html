@@ -1,0 +1,115 @@
+<div class="prediction-page">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">Modelo binario en validación</span>
+      <h2>Predicción de riesgo hospitalario</h2>
+      <p>Selecciona el servicio y el periodo actual. El sistema recuperará y validará automáticamente el historial necesario.</p>
+    </div>
+    <span class="legacy-note">Predicción futura separada del análisis histórico</span>
+  </header>
+
+  <section class="explanation" aria-label="Interpretación del resultado">
+    <strong>¿Qué significa esta predicción?</strong>
+    <p>La probabilidad representa la posibilidad estimada de que la ocupación del servicio supere el 90% durante el siguiente periodo.</p>
+    <p>El sistema genera una alerta cuando la probabilidad es igual o mayor al 36%.</p>
+    <p>Los niveles de riesgo facilitan la priorización preventiva y no representan directamente el porcentaje esperado de ocupación.</p>
+  </section>
+
+  <section class="form-card" aria-labelledby="prediction-form-title">
+    <div class="section-heading">
+      <div>
+        <span>Paso 1</span>
+        <h2 id="prediction-form-title">Datos para la predicción</h2>
+      </div>
+      <button class="refresh-button" type="button" (click)="cargarCatalogo()" [disabled]="cargandoCatalogo || cargandoPrediccion">
+        Actualizar catálogo
+      </button>
+    </div>
+
+    <div *ngIf="cargandoCatalogo" class="state-message" aria-live="polite">Cargando IPRESS y servicios...</div>
+    <div *ngIf="errorCatalogo" class="state-message state-error" role="alert">{{ errorCatalogo }}</div>
+
+    <form *ngIf="!cargandoCatalogo && !errorCatalogo" (ngSubmit)="predecir()" class="prediction-form">
+      <div class="field">
+        <label for="binary-ipress">IPRESS</label>
+        <select id="binary-ipress" name="codigoIpress" [(ngModel)]="codigoIpress" (ngModelChange)="actualizarServicios()" required>
+          <option value="" disabled>Selecciona una IPRESS</option>
+          <option *ngFor="let ipress of ipresses" [value]="ipress.codigo">{{ ipress.etiqueta }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="binary-service">Servicio hospitalario</label>
+        <select id="binary-service" name="servicio" [(ngModel)]="servicio" (ngModelChange)="limpiarResultado()" [disabled]="!codigoIpress" required>
+          <option value="" disabled>Selecciona un servicio</option>
+          <option *ngFor="let opcion of servicios" [value]="opcion">{{ opcion }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="binary-period">Periodo actual</label>
+        <input id="binary-period" name="periodoActual" type="month" [(ngModel)]="periodoActual" (ngModelChange)="limpiarResultado()" required>
+        <small>Formato: año y mes. El Backend buscará los seis meses necesarios.</small>
+      </div>
+
+      <button class="predict-button" type="submit" [disabled]="!formularioValido || cargandoPrediccion">
+        {{ cargandoPrediccion ? 'Generando predicción...' : 'Generar predicción' }}
+      </button>
+    </form>
+
+    <div *ngIf="errorPrediccion" class="state-message state-error prediction-error" role="alert" aria-live="assertive">
+      <strong>Sin predicción</strong>
+      <span>{{ errorPrediccion }}</span>
+    </div>
+  </section>
+
+  <section *ngIf="resultado as dato" class="result-card" [class.result-alert]="dato.alerta_alta_presion" [ngClass]="claseNivel(dato.nivel_riesgo)" aria-live="polite">
+    <div class="section-heading result-heading">
+      <div>
+        <span>Paso 2</span>
+        <h2>Resultado para el siguiente periodo</h2>
+      </div>
+      <div class="alert-badge" [class.alert-active]="dato.alerta_alta_presion">
+        {{ dato.alerta_alta_presion ? 'Alerta de alta presión' : 'Sin alerta de alta presión' }}
+      </div>
+    </div>
+
+    <div class="risk-level" [ngClass]="claseNivel(dato.nivel_riesgo)" role="status" [attr.aria-label]="etiquetaNivel(dato.nivel_riesgo)">
+      <span>Nivel de riesgo</span>
+      <strong>{{ etiquetaNivel(dato.nivel_riesgo) }}</strong>
+      <p>{{ dato.descripcion_riesgo }}</p>
+    </div>
+
+    <div class="probability-summary">
+      <span>Probabilidad de superar 90% de ocupación</span>
+      <strong>{{ formatearPorcentaje(dato.probabilidad_alta_presion) }}</strong>
+    </div>
+
+    <div class="probability-chart" role="img" [attr.aria-label]="'Probabilidad ' + formatearPorcentaje(dato.probabilidad_alta_presion) + ', frontera Bajo Medio ' + formatearPorcentaje(dato.umbral_bajo_medio) + ', umbral Alto ' + formatearPorcentaje(dato.threshold)">
+      <div class="track risk-track">
+        <span class="risk-zone zone-low" [style.width.%]="posicionBajoMedio"></span>
+        <span class="risk-zone zone-medium" [style.left.%]="posicionBajoMedio" [style.width.%]="posicionThreshold - posicionBajoMedio"></span>
+        <span class="risk-zone zone-high" [style.left.%]="posicionThreshold" [style.width.%]="100 - posicionThreshold"></span>
+        <i class="boundary-marker low-medium-marker" [style.left.%]="posicionBajoMedio"></i>
+        <i class="boundary-marker high-marker" [style.left.%]="posicionThreshold"></i>
+        <i class="probability-marker" [style.left.%]="anchoProbabilidad" aria-hidden="true"></i>
+      </div>
+      <div class="chart-labels">
+        <span>0%</span>
+        <span class="low-medium-label" [style.left.%]="posicionBajoMedio">{{ formatearPorcentaje(dato.umbral_bajo_medio) }} · Medio</span>
+        <span class="high-label" [style.left.%]="posicionThreshold">{{ formatearPorcentaje(dato.threshold) }} · Alto</span>
+        <span>100%</span>
+      </div>
+      <p class="chart-legend">Los niveles representan riesgo de superar 90% de ocupación el siguiente periodo.</p>
+    </div>
+
+    <div class="result-grid">
+      <div><span>IPRESS</span><strong>{{ dato.codigo_ipress }}</strong></div>
+      <div><span>Servicio evaluado</span><strong>{{ dato.servicio_hospitalizacion }}</strong></div>
+      <div><span>Periodo actual</span><strong>{{ dato.periodo_actual }}</strong></div>
+      <div><span>Periodo predicho</span><strong>{{ dato.periodo_predicho }}</strong></div>
+      <div><span>Threshold operacional</span><strong>{{ formatearPorcentaje(dato.threshold) }}</strong></div>
+      <div><span>Modelo</span><strong>{{ dato.modelo }}</strong></div>
+    </div>
+  </section>
+</div>

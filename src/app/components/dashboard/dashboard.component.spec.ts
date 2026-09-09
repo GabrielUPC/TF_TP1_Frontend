@@ -6,6 +6,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { ArchivoService } from '../../services/archivo.service';
 import { AuthService } from '../../services/auth.service';
 import { DashboardDetalle } from '../../models/dashboard-detalle';
+import { PrediccionBinariaService } from '../../services/prediccion-binaria.service';
 
 function registro(cambios: Partial<DashboardDetalle> = {}): DashboardDetalle {
   return {
@@ -23,16 +24,42 @@ function registro(cambios: Partial<DashboardDetalle> = {}): DashboardDetalle {
 
 describe('Contrato predictivo recibido: dashboard y alertas', () => {
   let servicio: jasmine.SpyObj<DashboardService>;
+  let archivoService: jasmine.SpyObj<ArchivoService>;
+  let prediccionService: jasmine.SpyObj<PrediccionBinariaService>;
 
   beforeEach(async () => {
-    servicio = jasmine.createSpyObj('DashboardService', ['filtrar', 'obtenerAlertas']);
+    servicio = jasmine.createSpyObj('DashboardService', [
+      'filtrar', 'obtenerAlertas', 'obtenerResumen', 'obtenerDetalle'
+    ]);
     servicio.filtrar.and.returnValue(of([registro()]));
     servicio.obtenerAlertas.and.returnValue(of([registro(), registro({nivelRiesgo: 'ALTO'})]));
+    servicio.obtenerResumen.and.returnValue(of({
+      totalPredicciones: 1,
+      totalRiesgoBajo: 0,
+      totalRiesgoMedio: 1,
+      totalRiesgoAlto: 0,
+      promedioOcupacionEstimada: .8,
+      promedioPresionIngresosCamas: 2,
+      promedioProbabilidad: .3,
+      totalIngresos: 20,
+      totalEgresos: 10,
+      totalEstancias: 40,
+      totalPacientesCama: 240,
+      totalCamasDisponiblesHabilitadas: 300,
+      nivelRiesgoPredominante: 'MEDIO',
+      mensajeResumen: ''
+    }));
+    servicio.obtenerDetalle.and.returnValue(of([registro()]));
+    archivoService = jasmine.createSpyObj('ArchivoService', ['listarArchivosProcesados']);
+    archivoService.listarArchivosProcesados.and.returnValue(of([]));
+    prediccionService = jasmine.createSpyObj('PrediccionBinariaService', ['obtenerCatalogo', 'predecir']);
+    prediccionService.obtenerCatalogo.and.returnValue(of([registro({ anio: 2025, mes: 6 })]));
     await TestBed.configureTestingModule({
       imports: [DashboardComponent, AlertasComponent],
       providers: [
         {provide: DashboardService, useValue: servicio},
-        {provide: ArchivoService, useValue: {}},
+        {provide: ArchivoService, useValue: archivoService},
+        {provide: PrediccionBinariaService, useValue: prediccionService},
         {provide: AuthService, useValue: {obtenerUsuarioActual: () => null}}
       ]
     }).compileComponents();
@@ -40,11 +67,25 @@ describe('Contrato predictivo recibido: dashboard y alertas', () => {
 
   function dashboard(fila = registro()) {
     const fixture = TestBed.createComponent(DashboardComponent);
-    spyOn(fixture.componentInstance, 'ngOnInit');
+    fixture.detectChanges();
     fixture.componentInstance.detalle = [fila];
+    fixture.componentInstance.alertas = [fila].filter((item) => {
+      const nivel = item.nivelRiesgo?.toUpperCase();
+      return nivel === 'MEDIO' || nivel === 'ALTO';
+    });
     fixture.detectChanges();
     return fixture;
   }
+
+  it('integra la predicción binaria dentro del dashboard sin ejecutarla automáticamente', () => {
+    const fixture = dashboard();
+    expect(fixture.nativeElement.querySelector('app-prediccion-binaria')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#binary-ipress')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.filter-panel')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Predicción de riesgo hospitalario');
+    expect(fixture.nativeElement.textContent).toContain('Explora la información asistencial');
+    expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
 
   it('muestra MEDIO y la probabilidad final aunque Bajo sea la clase más probable', () => {
     const fila = registro();

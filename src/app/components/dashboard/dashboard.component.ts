@@ -9,6 +9,7 @@ import { DashboardResumen } from '../../models/dashboard-resumen';
 import { ArchivoService } from '../../services/archivo.service';
 import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
+import { PrediccionBinariaComponent } from '../prediccion-binaria/prediccion-binaria.component';
 
 type SeleccionArchivo = 'TODOS' | 'ULTIMO' | number;
 
@@ -65,7 +66,7 @@ interface AccionGestion {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PrediccionBinariaComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
