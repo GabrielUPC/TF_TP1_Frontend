@@ -1,5 +1,4 @@
 export interface PrediccionBinariaAutomaticaRequest {
-  co_ipress: string;
   servicio: string;
   periodo_actual: string;
 }
@@ -31,4 +30,15 @@ export interface PrediccionBinariaAutomaticaError {
 export interface OpcionIpressPrediccion {
   codigo: string;
   etiqueta: string;
+}
+
+export interface CatalogoPrediccionBinaria {
+  codigoIpress: string;
+  nombreIpress: string;
+  servicios: ServicioCatalogoPrediccion[];
+}
+
+export interface ServicioCatalogoPrediccion {
+  servicio: string;
+  periodosDisponibles: string[];
 }

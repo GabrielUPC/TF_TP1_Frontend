@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environment';
-import { DashboardDetalle } from '../models/dashboard-detalle';
 import {
+  CatalogoPrediccionBinaria,
   PrediccionBinariaAutomaticaRequest,
   PrediccionBinariaAutomaticaResponse
 } from '../models/prediccion-binaria';
@@ -12,12 +12,12 @@ import {
 @Injectable({ providedIn: 'root' })
 export class PrediccionBinariaService {
   private readonly endpoint = `${environment.base}/predicciones-riesgo/binaria/automatica`;
-  private readonly catalogoEndpoint = `${environment.base}/dashboard/detalle`;
+  private readonly catalogoEndpoint = `${environment.base}/predicciones-riesgo/binaria/catalogo`;
 
   constructor(private http: HttpClient) {}
 
-  obtenerCatalogo(): Observable<DashboardDetalle[]> {
-    return this.http.get<DashboardDetalle[]>(this.catalogoEndpoint);
+  obtenerCatalogo(): Observable<CatalogoPrediccionBinaria> {
+    return this.http.get<CatalogoPrediccionBinaria>(this.catalogoEndpoint);
   }
 
   predecir(

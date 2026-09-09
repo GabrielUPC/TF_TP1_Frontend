@@ -20,7 +20,11 @@ export interface Reporte {
   rotacionCamas: number;
 
   nivelRiesgo: string;
-  probabilidad: number;
+  probabilidadAltaPresion: number;
+  threshold: number;
+  alertaAltaPresion: boolean;
+  descripcionRiesgo: string;
+  periodoPredicho: string;
   modeloUtilizado: string;
   fechaPrediccion: string;
 

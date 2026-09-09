@@ -1,577 +1,116 @@
 <div class="dashboard-page">
-
   <header class="dashboard-heading">
     <div>
       <span class="eyebrow">Gestión hospitalaria predictiva</span>
-      <h1>Dashboard predictivo de capacidad asistencial</h1>
-      <p>Indicadores operativos, capacidad registrada y riesgo asistencial del periodo.</p>
+      <h1>Dashboard de capacidad asistencial</h1>
+      <p>Datos observados del periodo y predicción binaria de alta presión para el mes siguiente.</p>
     </div>
-
     <div class="update-panel">
-      <div>
-        <span>Última actualización</span>
-        <strong>{{ ultimaActualizacion }}</strong>
-      </div>
-      <button type="button" (click)="cargarDashboard()" [disabled]="cargando">
-        Actualizar datos
-      </button>
+      <div><span>Última actualización</span><strong>{{ ultimaActualizacion }}</strong></div>
+      <button type="button" (click)="cargarDashboard()" [disabled]="cargando">Actualizar datos</button>
     </div>
   </header>
 
-  <section class="binary-prediction-section" aria-label="Predicción de riesgo hospitalario">
-    <app-prediccion-binaria></app-prediccion-binaria>
-  </section>
-
-  <section class="filter-panel" aria-label="Filtros del dashboard">
-    <div class="filter-title">
-      <span>Filtros</span>
-      <strong>Explora la información asistencial</strong>
-    </div>
-
+  <section class="filter-panel" aria-label="Filtro único del dashboard">
+    <div class="filter-title"><span>Analizar periodo</span><strong>Ventanas válidas de seis meses</strong></div>
     <div class="filter-grid">
       <div class="filter-field ipress-field">
         <label for="ipressFiltro">IPRESS asignada</label>
         <input id="ipressFiltro" [value]="ipressAsignada" readonly>
       </div>
-
-      <div class="filter-field file-field">
-        <label for="archivoFiltro">Archivo procesado</label>
-        <select
-          id="archivoFiltro"
-          [(ngModel)]="seleccionArchivo"
-          (ngModelChange)="cambiarArchivoSeleccionado()">
-          <option [ngValue]="'TODOS'">Todos los archivos</option>
-          <option
-            *ngIf="ultimoArchivoProcesado"
-            [ngValue]="'ULTIMO'">
-            Último archivo procesado
-          </option>
-          <option
-            *ngFor="let archivo of archivosProcesados"
-            [ngValue]="archivo.idArchivo">
-            {{ archivo.nombreArchivo }}
-          </option>
+      <div class="filter-field service-field">
+        <label for="servicioFiltro">Servicio hospitalario</label>
+        <select id="servicioFiltro" [(ngModel)]="servicioFiltro" (ngModelChange)="alCambiarServicio()">
+          <option value="">Selecciona un servicio</option>
+          <option *ngFor="let servicio of serviciosDisponibles" [value]="servicio">{{ servicio }}</option>
         </select>
       </div>
-
       <div class="filter-field">
         <label for="anioFiltro">Año base</label>
-        <select id="anioFiltro" [(ngModel)]="anioFiltro">
-          <option [ngValue]="null">Todos</option>
+        <select id="anioFiltro" [(ngModel)]="anioFiltro" (ngModelChange)="alCambiarAnio()" [disabled]="!servicioFiltro">
+          <option [ngValue]="null">Selecciona</option>
           <option *ngFor="let anio of aniosDisponibles" [ngValue]="anio">{{ anio }}</option>
         </select>
       </div>
-
       <div class="filter-field">
         <label for="mesFiltro">Mes base</label>
-        <select id="mesFiltro" [(ngModel)]="mesFiltro">
+        <select id="mesFiltro" [(ngModel)]="mesFiltro" [disabled]="anioFiltro === null">
+          <option [ngValue]="null">Selecciona</option>
+          <option *ngFor="let mes of mesesDisponibles" [ngValue]="mes">{{ nombreMes(mes) }}</option>
+        </select>
+      </div>
+      <div class="filter-field file-field">
+        <label for="archivoFiltro">Archivo observado (opcional)</label>
+        <select id="archivoFiltro" [(ngModel)]="idArchivoFiltro">
           <option [ngValue]="null">Todos</option>
-          <option *ngFor="let mes of meses" [ngValue]="mes.valor">{{ mes.nombre }}</option>
+          <option *ngFor="let archivo of archivosProcesados" [ngValue]="archivo.idArchivo">{{ archivo.nombreArchivo }}</option>
         </select>
       </div>
-
-      <div class="filter-field service-field">
-        <label for="servicioFiltro">Servicio hospitalario</label>
-        <select id="servicioFiltro" [(ngModel)]="servicioFiltro">
-          <option value="">Todos los servicios</option>
-          <option *ngFor="let servicio of serviciosDisponibles" [value]="servicio">
-            {{ servicio }}
-          </option>
-        </select>
-      </div>
-
       <div class="filter-actions">
-        <button class="btn-apply" type="button" (click)="filtrarDashboard()" [disabled]="cargando">
-          Aplicar filtros
-        </button>
-        <button class="btn-clear" type="button" (click)="limpiarFiltros()" [disabled]="cargando">
-          Limpiar
-        </button>
+        <button class="btn-apply" type="button" (click)="analizarPeriodo()" [disabled]="cargando">Analizar periodo</button>
+        <button class="btn-clear" type="button" (click)="limpiarFiltros()" [disabled]="cargando">Limpiar</button>
       </div>
     </div>
   </section>
 
-  <section class="file-context" aria-live="polite">
-    <span>{{ etiquetaArchivoSeleccionado }}</span>
-    <strong>{{ archivoSeleccionadoNombre }}</strong>
-  </section>
+  <div *ngIf="cargando" class="state-card"><span class="state-dot"></span>Procesando información...</div>
+  <div *ngIf="error" class="state-card state-error"><strong>No se pudo completar el análisis</strong><span>{{ error }}</span></div>
 
-  <div *ngIf="cargando" class="state-card">
-    <span class="state-dot"></span>
-    Cargando información asistencial...
-  </div>
-
-  <div *ngIf="error" class="state-card state-error">
-    <strong>No se pudo mostrar el dashboard</strong>
-    <span>{{ error }}</span>
-  </div>
-
-  <ng-container *ngIf="!cargando && !error">
-
-    <div *ngIf="detalle.length === 0" class="state-card empty-state">
-      <strong>No hay datos para mostrar</strong>
-      <span>Prueba con otros filtros o carga información hospitalaria compatible.</span>
-    </div>
-
-    <ng-container *ngIf="detalle.length > 0">
-
-      <section class="overview-grid">
-        <article class="risk-card" [ngClass]="obtenerClaseRiesgo(registroCritico?.nivelRiesgo)">
-          <div class="risk-topline">
-            <span class="risk-icon" aria-hidden="true">!</span>
-            <div>
-              <span>Nivel de riesgo predicho</span>
-              <strong>Siguiente mes</strong>
-            </div>
-          </div>
-
-          <div class="risk-level">{{ registroCritico?.nivelRiesgo || 'SIN DATOS' }}</div>
-
+  <ng-container *ngIf="!cargando">
+    <section class="overview-grid" *ngIf="detalle.length > 0 || resultado">
+      <article class="risk-card" [ngClass]="claseRiesgo(resultado?.nivel_riesgo)">
+        <div class="risk-topline">
+          <span class="risk-icon" aria-hidden="true">!</span>
+          <div><span>Predicción binaria</span><strong>Alta presión el siguiente mes</strong></div>
+        </div>
+        <ng-container *ngIf="resultado; else sinPrediccion">
+          <div class="risk-level">{{ resultado.nivel_riesgo }}</div>
           <div class="probability-block">
-            <span>Índice operativo de riesgo</span>
-            <strong>{{ formatearPorcentaje(riesgoInsuficienciaCapacidad) }}</strong>
+            <span>Probabilidad de superar 90% de ocupación</span>
+            <strong>{{ formatearPorcentaje(resultado.probabilidad_alta_presion) }}</strong>
           </div>
-
-          <div class="risk-scale">
-            <div class="scale-track">
-              <span class="scale-low"></span>
-              <span class="scale-medium"></span>
-              <span class="scale-high"></span>
-              <i *ngIf="probabilidadCritica !== null" [style.left.%]="probabilidadCritica"></i>
-            </div>
-            <div class="scale-labels">
-              <span>Bajo</span><span>Medio</span><span>Alto</span>
-            </div>
-          </div>
-
           <div class="risk-context">
-            <div>
-              <span>Probabilidad de la clase predicha</span>
-              <strong>{{ formatearProbabilidad(registroCritico?.probabilidad) }}</strong>
-            </div>
-            <div>
-              <span>Probabilidad de riesgo Alto</span>
-              <strong>{{ formatearProbabilidad(registroCritico?.probabilidadRiesgoAlto) }}</strong>
-            </div>
-            <div>
-              <span>Periodo base</span>
-              <strong>{{ formatearPeriodoBase(registroCritico) }}</strong>
-            </div>
-            <div>
-              <span>Periodo predicho</span>
-              <strong>{{ formatearPeriodoPredicho(registroCritico) }}</strong>
-            </div>
-            <div>
-              <span>Servicio</span>
-              <strong>{{ registroCritico?.servicioHospitalario || 'Sin servicio' }}</strong>
-            </div>
-            <div>
-              <span>Archivo</span>
-              <strong>{{ registroCritico?.nombreArchivo || archivoSeleccionadoNombre }}</strong>
-            </div>
+            <div><span>Umbral de alerta</span><strong>{{ formatearPorcentaje(resultado.threshold) }}</strong></div>
+            <div><span>Periodo predicho</span><strong>{{ resultado.periodo_predicho }}</strong></div>
+            <div><span>Alerta</span><strong>{{ resultado.alerta_alta_presion ? 'ACTIVA' : 'NO ACTIVA' }}</strong></div>
+            <div><span>Servicio</span><strong>{{ resultado.servicio_hospitalizacion }}</strong></div>
           </div>
+          <div class="model-chip">Modelo: {{ resultado.modelo }}</div>
+        </ng-container>
+        <ng-template #sinPrediccion>
+          <div class="risk-level">SIN PREDICCIÓN</div>
+          <p>Selecciona una ventana válida y pulsa “Analizar periodo”. Los datos observados siguen disponibles.</p>
+        </ng-template>
+      </article>
 
-          <div class="model-chip">
-            Modelo usado: {{ registroCritico?.modeloUtilizado || 'Modelo predictivo configurado' }}
-          </div>
-        </article>
-
-        <div class="kpi-grid">
-          <article class="kpi-card tone-blue">
-            <span class="kpi-symbol">IN</span>
-            <div>
-              <span>Ingresos hospitalarios</span>
-              <strong>{{ formatearNumero(totalIngresos) }}</strong>
-              <small>Acumulado del periodo</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-green">
-            <span class="kpi-symbol">EG</span>
-            <div>
-              <span>Egresos hospitalarios</span>
-              <strong>{{ formatearNumero(totalEgresos) }}</strong>
-              <small>Acumulado del periodo</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-purple">
-            <span class="kpi-symbol">ES</span>
-            <div>
-              <span>Estancias hospitalarias</span>
-              <strong>{{ formatearNumero(totalEstancias) }}</strong>
-              <small>Total registrado</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-cyan">
-            <span class="kpi-symbol">PC</span>
-            <div>
-              <span>Pacientes-cama</span>
-              <strong>{{ formatearNumero(totalPacientesCama, 1) }}</strong>
-              <small>Actividad asistencial</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-indigo">
-            <span class="kpi-symbol">CT</span>
-            <div>
-              <span>Camas totales</span>
-              <strong>{{ formatearNumero(totalCamas) }}</strong>
-              <small>Capacidad informada</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-emerald">
-            <span class="kpi-symbol">CD</span>
-            <div>
-              <span>Camas disponibles</span>
-              <strong>{{ formatearNumero(capacidadRegistrada) }}</strong>
-              <small>Capacidad informada</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-orange">
-            <span class="kpi-symbol">OC</span>
-            <div>
-              <span>Ocupación estimada</span>
-              <strong>{{ formatearOcupacion(ocupacionPromedio) }}</strong>
-              <small>Promedio del periodo</small>
-            </div>
-          </article>
-
-          <article class="kpi-card tone-red">
-            <span class="kpi-symbol">PR</span>
-            <div>
-              <span>Presión ingresos/camas</span>
-              <strong>{{ formatearNumero(presionPromedio, 2) }}</strong>
-              <small>Promedio asistencial</small>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="decision-center panel">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Interpretación operativa</span>
-            <h2>Lectura del resultado</h2>
-            <p>Interpretación del riesgo estimado con la información hospitalaria cargada y procesada.</p>
-          </div>
-          <strong class="panel-total">{{ nivelBrechaOperativaActual }}</strong>
-        </div>
-
-        <div class="decision-grid" *ngIf="servicioPrioritario as servicio">
-          <article>
-            <span>Servicio hospitalario</span>
-            <strong>{{ servicio.servicioHospitalario || 'Sin servicio' }}</strong>
-          </article>
-          <article>
-            <span>Periodo base</span>
-            <strong>{{ formatearPeriodoBase(servicio) }}</strong>
-          </article>
-          <article>
-            <span>Periodo predicho</span>
-            <strong>{{ formatearPeriodoPredicho(servicio) }}</strong>
-          </article>
-          <article>
-            <span>Nivel de riesgo</span>
-            <strong>{{ servicio.nivelRiesgo || 'SIN DATOS' }}</strong>
-          </article>
-          <article>
-            <span>Probabilidad de la clase predicha</span>
-            <strong>{{ formatearProbabilidad(servicio.probabilidad) }}</strong>
-          </article>
-          <article>
-            <span>Probabilidades por clase</span>
-            <strong>Bajo: {{ formatearProbabilidad(servicio.probabilidadRiesgoBajo) }} · Medio: {{ formatearProbabilidad(servicio.probabilidadRiesgoMedio) }} · Alto: {{ formatearProbabilidad(servicio.probabilidadRiesgoAlto) }}</strong>
-          </article>
-          <article>
-            <span>Causa principal</span>
-            <strong>{{ causaPrincipalRiesgo(servicio) }}</strong>
-          </article>
-        </div>
-
-        <div class="decision-diagnosis result-reading">
-          <strong>Interpretación operativa</strong>
-          <p *ngFor="let parrafo of lecturaResultado">{{ parrafo }}</p>
-        </div>
-
-        <div class="result-data-block" *ngIf="datosResultado.length > 0">
-          <div class="subpanel-heading">
-            <div>
-              <span class="section-kicker">Datos de apoyo</span>
-              <h3>Datos que explican el resultado</h3>
-              <p>Indicadores principales expresados en lenguaje sencillo</p>
-            </div>
-          </div>
-
-          <div class="result-data-grid">
-            <article class="result-data-card" *ngFor="let dato of datosResultado">
-              <span>{{ dato.nombre }}</span>
-              <strong>{{ dato.valor }}</strong>
-              <p>{{ dato.descripcion }}</p>
-            </article>
-          </div>
-        </div>
-
-        <div class="signals-block" *ngIf="senalesObservadas.length > 0">
-          <div class="subpanel-heading">
-            <div>
-              <span class="section-kicker">Lectura simple</span>
-              <h3>Señales observadas</h3>
-              <p>Máximo cuatro señales para explicar qué está pasando</p>
-            </div>
-          </div>
-
-          <div class="signals-grid">
-            <article
-              class="signal-card"
-              *ngFor="let senal of senalesObservadas"
-              [ngClass]="'signal-' + senal.tipo"
-            >
-              <strong>{{ senal.nombre }}</strong>
-              <p>{{ senal.descripcion }}</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="management-actions panel" *ngIf="accionesSugeridasGestion.length > 0">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Gestión hospitalaria</span>
-            <h2>Acciones sugeridas para gestión hospitalaria</h2>
-            <p>
-              Acciones de revisión derivadas de los indicadores alterados.
-              No reemplazan decisiones clínicas ni asignan camas automáticamente.
-            </p>
-          </div>
-        </div>
-
-        <div class="management-actions-grid">
-          <article class="management-action-card" *ngFor="let accion of accionesSugeridasGestion">
-            <div class="action-card-top">
-              <div>
-                <span>Indicador</span>
-                <strong>{{ accion.indicador }}</strong>
-              </div>
-              <span class="status-pill" [ngClass]="obtenerClaseEstadoAccion(accion.estado)">
-                {{ accion.estado }}
-              </span>
-            </div>
-
-            <div class="action-metrics">
-              <div>
-                <span>Valor</span>
-                <strong>{{ accion.valor }}</strong>
-              </div>
-              <div>
-                <span>Prioridad</span>
-                <strong class="priority-pill" [ngClass]="obtenerClasePrioridadAccion(accion.prioridad)">
-                  {{ accion.prioridad }}
-                </strong>
-              </div>
-            </div>
-
-            <div class="action-detail">
-              <span>Causa interpretada</span>
-              <p>{{ accion.causa }}</p>
-            </div>
-
-            <div class="action-detail">
-              <span>Acción sugerida</span>
-              <p>{{ accion.accion }}</p>
-            </div>
-
-            <div class="action-detail">
-              <span>Responsable sugerido</span>
-              <p>{{ accion.responsable }}</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="charts-grid">
-        <article class="panel chart-panel">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Actividad asistencial</span>
-              <h2>Ingresos por servicio hospitalario</h2>
-              <p>Top 6 del periodo seleccionado</p>
-            </div>
-            <strong class="panel-total">{{ formatearNumero(totalIngresos) }}</strong>
-          </div>
-
-          <div *ngIf="topServicios.length > 0" class="bar-chart">
-            <div class="bar-item" *ngFor="let servicio of topServicios">
-              <span class="bar-value">{{ formatearNumero(servicio.ingresos) }}</span>
-              <div class="bar-track">
-                <div class="bar-fill" [style.height.%]="servicio.altura"></div>
-              </div>
-              <span class="bar-label" [title]="servicio.nombre">{{ servicio.nombre }}</span>
-            </div>
-          </div>
-
-          <div *ngIf="topServicios.length === 0" class="mini-empty">
-            Sin ingresos registrados para graficar.
-          </div>
-        </article>
-
-        <article class="panel chart-panel">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Tendencia</span>
-              <h2>Evolución mensual de ocupación estimada</h2>
-              <p>Promedio por mes con registros</p>
-            </div>
-            <strong class="panel-total">{{ formatearOcupacion(ocupacionPromedio) }}</strong>
-          </div>
-
-          <div *ngIf="puntosOcupacion.length > 0" class="line-chart">
-            <svg viewBox="0 0 600 214" role="img" aria-label="Evolución mensual de ocupación">
-              <g *ngFor="let guia of guiasOcupacion">
-                <line x1="42" x2="566" [attr.y1]="guia.y" [attr.y2]="guia.y"></line>
-                <text x="35" [attr.y]="guia.y + 4" text-anchor="end">
-                  {{ formatearNumero(guia.valor) }}%
-                </text>
-              </g>
-
-              <polyline class="line-main" [attr.points]="trazadoOcupacion"></polyline>
-
-              <g *ngFor="let punto of puntosOcupacion">
-                <circle [attr.cx]="punto.x" [attr.cy]="punto.y" r="5"></circle>
-                <text class="point-value" [attr.x]="punto.x" [attr.y]="punto.y - 12" text-anchor="middle">
-                  {{ formatearPorcentaje(punto.valor) }}
-                </text>
-                <text [attr.x]="punto.x" y="205" text-anchor="middle">{{ punto.etiqueta }}</text>
-              </g>
-            </svg>
-          </div>
-
-          <div *ngIf="puntosOcupacion.length === 0" class="mini-empty">
-            Sin ocupación mensual para graficar.
-          </div>
-        </article>
-      </section>
-
-      <section class="insight-grid">
-        <article class="panel explain-card" *ngIf="factoresExplicativos.length > 0">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Lectura del modelo</span>
-              <h2>Factores asociados al riesgo</h2>
-              <p>Registro de mayor criticidad del periodo actual</p>
-            </div>
-          </div>
-
-          <ul class="factor-list">
-            <li *ngFor="let factor of factoresExplicativos">{{ factor }}</li>
-          </ul>
-        </article>
-
-        <article class="panel recommendation-box" *ngIf="registroCritico">
-          <span>Resumen operativo</span>
-          <strong>{{ interpretacionRiesgo }}</strong>
-          <ul>
-            <li *ngFor="let item of resumenOperativo">{{ item }}</li>
-          </ul>
-        </article>
-      </section>
-
-      <section class="indicator-section panel">
-        <div class="panel-heading">
-          <div>
-            <span class="section-kicker">Lectura de indicadores</span>
-            <h2>¿Qué significan los indicadores?</h2>
-            <p>Información mensual de hospitalización procesada para apoyar la revisión hospitalaria.</p>
-          </div>
-        </div>
-
-        <div class="indicator-guide executive-guide">
-          <article *ngFor="let indicador of indicadoresExplicados">
-            <strong>{{ indicador.nombre }}</strong>
-            <p>{{ indicador.descripcion }}</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="support-grid">
-        <article class="panel variable-panel">
-          <div class="panel-heading">
-            <div>
-              <span class="section-kicker">Interpretación</span>
-              <h2>Variables influyentes</h2>
-              <p>Registro de mayor criticidad</p>
-            </div>
-          </div>
-
-          <div class="variable-summary" *ngIf="registroCritico">
-            <span>Servicio analizado</span>
-            <strong>{{ registroCritico.servicioHospitalario }}</strong>
-            <small>Probabilidad de la clase predicha: {{ formatearProbabilidad(registroCritico.probabilidad) }}</small>
-          </div>
-
-          <div class="variable-list" *ngIf="variablesInfluyentes.length > 0">
-            <div class="variable-row" *ngFor="let variable of variablesInfluyentes">
-              <div>
-                <span>{{ variable.nombre }}</span>
-                <strong>{{ variable.valor }}</strong>
-              </div>
-              <i [ngClass]="'trend-' + variable.tendencia">
-                {{ variable.tendencia === 'sube' ? '↑' : variable.tendencia === 'baja' ? '↓' : '•' }}
-              </i>
-            </div>
-          </div>
-
-          <div *ngIf="variablesInfluyentes.length === 0" class="mini-empty">
-            Sin variables disponibles.
-          </div>
-        </article>
-
-        <article class="panel alerts-panel">
-          <div class="subpanel-heading">
-            <div>
-              <span class="section-kicker">Alertas operativas</span>
-              <h3>Alertas destacadas</h3>
-              <p>Servicios con riesgo medio o alto</p>
-            </div>
-            <strong>{{ alertasDestacadas.length }}</strong>
-          </div>
-
-          <div *ngIf="alertasDestacadas.length === 0" class="mini-empty alert-empty">
-            No hay alertas críticas para el periodo seleccionado.
-          </div>
-
-          <div class="alert-list" *ngIf="alertasDestacadas.length > 0">
-            <article
-              class="alert-item"
-              *ngFor="let alerta of alertasDestacadas"
-              [ngClass]="obtenerClaseRiesgo(alerta.nivelRiesgo)"
-            >
-              <span class="alert-mark">!</span>
-
-              <div>
-                <strong>{{ alerta.servicioHospitalario }}: riesgo {{ alerta.nivelRiesgo }}</strong>
-                <p>{{ obtenerMensajeAlerta(alerta) }}</p>
-              </div>
-            </article>
-          </div>
-        </article>
-      </section>
-
-      <div class="info-note">
-        <strong>Alcance de la plataforma:</strong>
-        La plataforma no muestra camas libres en tiempo real; anticipa presión mensual por servicio
-        a partir de información consolidada.
+      <div class="kpi-grid">
+        <article class="kpi-card tone-blue"><span class="kpi-symbol">IN</span><div><span>Ingresos</span><strong>{{ formatearNumero(totalIngresos) }}</strong></div></article>
+        <article class="kpi-card tone-green"><span class="kpi-symbol">EG</span><div><span>Egresos</span><strong>{{ formatearNumero(totalEgresos) }}</strong></div></article>
+        <article class="kpi-card tone-purple"><span class="kpi-symbol">ES</span><div><span>Estancias</span><strong>{{ formatearNumero(totalEstancias) }}</strong></div></article>
+        <article class="kpi-card tone-cyan"><span class="kpi-symbol">PD</span><div><span>Pacientes-día</span><strong>{{ formatearNumero(totalPacientesCama) }}</strong></div></article>
+        <article class="kpi-card tone-indigo"><span class="kpi-symbol">CT</span><div><span>Camas totales</span><strong>{{ formatearNumero(totalCamas) }}</strong><small>Camas físicas</small></div></article>
+        <article class="kpi-card tone-emerald"><span class="kpi-symbol">DC</span><div><span>Días-cama disponibles</span><strong>{{ formatearNumero(totalDiasCama) }}</strong><small>Capacidad mensual D1</small></div></article>
+        <article class="kpi-card tone-orange"><span class="kpi-symbol">OC</span><div><span>Ocupación observada</span><strong>{{ formatearPorcentaje(ocupacionPromedio) }}</strong></div></article>
+        <article class="kpi-card tone-red"><span class="kpi-symbol">PR</span><div><span>Presión ingresos/camas</span><strong>{{ formatearNumero(presionPromedio, 2) }}</strong></div></article>
       </div>
+    </section>
 
-      <div class="disclaimer">
-        La predicción es referencial y sirve como apoyo a la revisión hospitalaria.
-        No asigna camas, no decide altas y no reemplaza decisiones clínicas.
+    <section class="panel" *ngIf="registroSeleccionado as registro">
+      <div class="panel-heading">
+        <div><span class="section-kicker">Datos observados</span><h2>{{ registro.servicioHospitalario }}</h2>
+          <p>{{ nombreMes(registro.mes) }} {{ registro.anio }} · {{ registro.nombreArchivo }}</p></div>
       </div>
+      <div class="decision-grid">
+        <article><span>Promedio de estancia</span><strong>{{ formatearNumero(registro.promedioEstancia, 2) }} días</strong></article>
+        <article><span>Rotación de camas</span><strong>{{ formatearNumero(registro.rotacionCamas, 2) }}</strong></article>
+        <article><span>Camas físicas habilitadas</span><strong>{{ registro.camasDisponiblesHabilitadas == null ? 'N/D' : formatearNumero(registro.camasDisponiblesHabilitadas) }}</strong></article>
+        <article><span>Predicción asociada</span><strong>{{ registro.idPrediccion ? 'Vigente' : 'No generada' }}</strong></article>
+      </div>
+    </section>
 
-    </ng-container>
+    <div *ngIf="detalle.length === 0 && !error" class="state-card empty-state">
+      <strong>No hay datos observados para mostrar</strong>
+      <span>Carga información hospitalaria válida o limpia los filtros.</span>
+    </div>
   </ng-container>
-
 </div>

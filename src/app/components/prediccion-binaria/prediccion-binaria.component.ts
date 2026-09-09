@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DashboardDetalle } from '../../models/dashboard-detalle';
 import {
+  CatalogoPrediccionBinaria,
   OpcionIpressPrediccion,
   NivelRiesgoPresentacion,
   PrediccionBinariaAutomaticaError,
@@ -20,7 +20,7 @@ import { PrediccionBinariaService } from '../../services/prediccion-binaria.serv
   styleUrl: './prediccion-binaria.component.css'
 })
 export class PrediccionBinariaComponent implements OnInit {
-  private catalogo: DashboardDetalle[] = [];
+  private catalogo: CatalogoPrediccionBinaria | null = null;
 
   ipresses: OpcionIpressPrediccion[] = [];
   servicios: string[] = [];
@@ -48,12 +48,14 @@ export class PrediccionBinariaComponent implements OnInit {
     this.errorCatalogo = '';
 
     this.prediccionService.obtenerCatalogo().subscribe({
-      next: (registros) => {
-        this.catalogo = registros.filter((item) =>
-          Boolean(item.codigoIpress?.trim()) && Boolean(item.servicioHospitalario?.trim())
-        );
-        this.ipresses = this.construirIpress(this.catalogo);
-        this.codigoIpress = this.ipresses.length === 1 ? this.ipresses[0].codigo : '';
+      next: (catalogo) => {
+        this.catalogo = catalogo;
+        this.ipresses = catalogo.codigoIpress ? [{
+          codigo: catalogo.codigoIpress,
+          etiqueta: catalogo.nombreIpress
+            ? `${catalogo.nombreIpress} (${catalogo.codigoIpress})` : catalogo.codigoIpress
+        }] : [];
+        this.codigoIpress = catalogo.codigoIpress || '';
         this.actualizarServicios();
         this.cargandoCatalogo = false;
       },
@@ -68,12 +70,8 @@ export class PrediccionBinariaComponent implements OnInit {
     this.servicio = '';
     this.resultado = null;
     this.errorPrediccion = '';
-    this.servicios = [...new Set(
-      this.catalogo
-        .filter((item) => item.codigoIpress?.trim() === this.codigoIpress)
-        .map((item) => item.servicioHospitalario.trim())
-        .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b, 'es'));
+    this.servicios = (this.catalogo?.servicios ?? [])
+      .map(item => item.servicio).sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   limpiarResultado(): void {
@@ -91,7 +89,6 @@ export class PrediccionBinariaComponent implements OnInit {
     this.resultado = null;
 
     this.prediccionService.predecir({
-      co_ipress: this.codigoIpress,
       servicio: this.servicio,
       periodo_actual: this.periodoActual
     }).subscribe({
@@ -165,17 +162,6 @@ export class PrediccionBinariaComponent implements OnInit {
     return periodosFaltantes.length > 0
       ? `${base} Periodos faltantes: ${periodosFaltantes.join(', ')}.`
       : base;
-  }
-
-  private construirIpress(registros: DashboardDetalle[]): OpcionIpressPrediccion[] {
-    const nombre = this.authService.obtenerUsuarioActual()?.nombreIpress?.trim();
-    const codigos = [...new Set(registros.map((item) => item.codigoIpress?.trim()).filter(
-      (codigo): codigo is string => Boolean(codigo)
-    ))].sort();
-    return codigos.map((codigo) => ({
-      codigo,
-      etiqueta: nombre ? `${nombre} (${codigo})` : codigo
-    }));
   }
 
   private respuestaValida(respuesta: PrediccionBinariaAutomaticaResponse | null): boolean {

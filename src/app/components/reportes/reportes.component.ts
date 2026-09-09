@@ -264,7 +264,7 @@ export class ReportesComponent implements OnInit {
       this.formatearPeriodoBase(reporte),
       this.formatearPeriodoPredicho(reporte),
       reporte.nivelRiesgo,
-      this.formatearProbabilidad(reporte.probabilidad),
+      this.formatearProbabilidad(reporte.probabilidadAltaPresion),
       this.convertirPorcentaje(reporte.ocupacionEstimada),
       this.formatearNumero(reporte.presionIngresosCamas),
       this.formatearNumero(reporte.promedioEstancia),
