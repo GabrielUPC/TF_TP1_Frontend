@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardService } from '../../services/dashboard.service';
 import { PrediccionBinariaService } from '../../services/prediccion-binaria.service';
@@ -82,6 +82,18 @@ describe('DashboardComponent integrado', () => {
       servicio: 'MEDICINA', periodo_actual: '2025-06'
     });
     expect(c.resultado?.nivel_riesgo).toBe('ALTO');
+  });
+
+  it('muestra detail cuando el servidor no devuelve mensaje normalizado', () => {
+    prediccion.predecir.and.returnValue(throwError(() => ({
+      error: { detail: 'FastAPI rechazó el cuerpo enviado.' }
+    })));
+    const c = fixture.componentInstance;
+    c.servicioFiltro = 'MEDICINA'; c.anioFiltro = 2025; c.mesFiltro = 6;
+
+    c.analizarPeriodo();
+
+    expect(c.error).toBe('FastAPI rechazó el cuerpo enviado.');
   });
 
   it('distingue camas físicas de días-cama disponibles', () => {

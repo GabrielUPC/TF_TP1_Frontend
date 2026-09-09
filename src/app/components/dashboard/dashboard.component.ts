@@ -110,7 +110,12 @@ export class DashboardComponent implements OnInit {
       },
       error: error => {
         const cuerpo = error?.error as PrediccionBinariaAutomaticaError | undefined;
-        this.error = cuerpo?.mensaje || 'No fue posible analizar el periodo seleccionado.';
+        const detalle = typeof error?.error?.detail === 'string'
+          ? error.error.detail
+          : error?.error?.detail
+            ? JSON.stringify(error.error.detail)
+            : '';
+        this.error = cuerpo?.mensaje || detalle || 'No fue posible analizar el periodo seleccionado.';
         this.cargando = false;
       }
     });
