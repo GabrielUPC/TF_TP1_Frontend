@@ -108,6 +108,88 @@
       </div>
     </section>
 
+    <section class="panel management-actions" *ngIf="accionesSugeridas.length > 0">
+      <div class="panel-heading">
+        <div>
+          <span class="section-kicker">Gestión preventiva</span>
+          <h2>Acciones sugeridas para gestión hospitalaria</h2>
+          <p>Acciones de revisión derivadas de los indicadores observados. No reemplazan decisiones clínicas, no asignan camas automáticamente y no representan una predicción independiente del modelo.</p>
+        </div>
+      </div>
+      <div class="management-actions-grid">
+        <article class="management-action-card" *ngFor="let item of accionesSugeridas">
+          <div class="action-card-top">
+            <div><span>Indicador</span><strong>{{ item.indicador }}</strong></div>
+            <div class="priority-block">
+              <span>Prioridad</span>
+              <strong class="priority-pill" [ngClass]="clasePrioridad(item.prioridad)">{{ item.prioridad }}</strong>
+            </div>
+          </div>
+          <div class="action-value"><span>Valor</span><strong>{{ item.valor }}</strong></div>
+          <div class="action-detail">
+            <span>Interpretación del indicador</span>
+            <p>{{ item.interpretacion }}</p>
+          </div>
+          <div class="action-detail">
+            <span>Acción sugerida</span>
+            <p>{{ item.accion }}</p>
+          </div>
+          <div class="action-detail">
+            <span>Responsable sugerido</span>
+            <p>{{ item.responsable }}</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="charts-grid observed-charts" *ngIf="registroSeleccionado">
+      <article class="panel chart-card">
+        <div class="chart-heading">
+          <div>
+            <span class="section-kicker">Actividad asistencial</span>
+            <h2>Ingresos por servicio hospitalario</h2>
+            <p>Top 6 del periodo seleccionado</p>
+          </div>
+          <strong class="chart-summary">Total: {{ formatearNumero(totalIngresosGrafico) }}</strong>
+        </div>
+        <div class="bar-chart" *ngIf="barrasIngresos.length > 0; else sinActividad">
+          <div class="bar-column" *ngFor="let barra of barrasIngresos"
+               [attr.aria-label]="barra.servicio + ': ' + barra.valor + ' ingresos'">
+            <strong>{{ formatearNumero(barra.valor) }}</strong>
+            <div class="bar-track"><div class="bar-fill" [style.height.%]="barra.altura"></div></div>
+            <span [title]="barra.servicio">{{ barra.servicio }}</span>
+          </div>
+        </div>
+        <ng-template #sinActividad><p class="chart-empty">No hay ingresos observados para el periodo seleccionado.</p></ng-template>
+      </article>
+
+      <article class="panel chart-card">
+        <div class="chart-heading">
+          <div>
+            <span class="section-kicker">Tendencia de ocupación</span>
+            <h2>Evolución mensual del porcentaje de ocupación</h2>
+            <p>Ocupación observada a partir de registros hospitalarios</p>
+          </div>
+          <strong class="chart-summary">Promedio: {{ formatearPorcentaje(promedioOcupacionTendencia) }}</strong>
+        </div>
+        <div class="line-chart-wrap" *ngIf="puntosOcupacion.length > 0; else sinTendencia">
+          <svg class="line-chart" viewBox="0 0 640 245" role="img"
+               aria-label="Evolución mensual de la ocupación observada">
+            <line class="axis-line" x1="36" y1="210" x2="606" y2="210"></line>
+            <line class="threshold-line" x1="36" [attr.y1]="yUmbralOcupacion" x2="606" [attr.y2]="yUmbralOcupacion"></line>
+            <text class="threshold-label" x="40" [attr.y]="yUmbralOcupacion - 6">Umbral operacional de alta presión: 90 %</text>
+            <polyline class="occupancy-line" [attr.points]="lineaOcupacion"></polyline>
+            <g *ngFor="let punto of puntosOcupacion">
+              <circle class="occupancy-point" [attr.cx]="punto.x" [attr.cy]="punto.y" r="5"></circle>
+              <text class="point-value" [attr.x]="punto.x" [attr.y]="punto.y - 10">{{ formatearPorcentaje(punto.valor) }}</text>
+              <text class="axis-label" [attr.x]="punto.x" y="232">{{ punto.etiqueta }}</text>
+            </g>
+          </svg>
+        </div>
+        <ng-template #sinTendencia><p class="chart-empty">No hay datos mensuales de ocupación para el servicio seleccionado.</p></ng-template>
+      </article>
+    </section>
+
     <div *ngIf="detalle.length === 0 && !error" class="state-card empty-state">
       <strong>No hay datos observados para mostrar</strong>
       <span>Carga información hospitalaria válida o limpia los filtros.</span>

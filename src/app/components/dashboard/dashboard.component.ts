@@ -16,6 +16,31 @@ import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { PrediccionBinariaService } from '../../services/prediccion-binaria.service';
 
+type PrioridadGestion = 'ALTA' | 'MEDIA' | 'BAJA' | 'NO EVALUABLE';
+
+interface AccionGestion {
+  indicador: string;
+  valor: string;
+  prioridad: PrioridadGestion;
+  interpretacion: string;
+  accion: string;
+  responsable: string;
+}
+
+interface BarraIngresos {
+  servicio: string;
+  valor: number;
+  altura: number;
+}
+
+interface PuntoOcupacion {
+  periodo: string;
+  etiqueta: string;
+  valor: number;
+  x: number;
+  y: number;
+}
+
 @Component({
   selector: 'app-dashboard',
   imports: [CommonModule, FormsModule],
@@ -33,6 +58,8 @@ export class DashboardComponent implements OnInit {
   anioFiltro: number | null = null;
   mesFiltro: number | null = null;
   resultado: PrediccionBinariaAutomaticaResponse | null = null;
+  datosActividad: DashboardDetalle[] = [];
+  datosTendencia: DashboardDetalle[] = [];
   cargando = false;
   error = '';
 
@@ -63,6 +90,7 @@ export class DashboardComponent implements OnInit {
       next: data => {
         this.resumen = data.resumen;
         this.detalle = data.detalle;
+        this.establecerDatosVisualesBase(data.detalle);
         this.alertas = data.alertas;
         this.catalogo = data.catalogo;
         this.archivosProcesados = data.archivos;
@@ -94,18 +122,25 @@ export class DashboardComponent implements OnInit {
     }).pipe(
       switchMap(resultado => {
         this.resultado = resultado;
-        return this.dashboardService.filtrar(
-          this.idArchivoFiltro ?? undefined,
-          this.anioFiltro ?? undefined,
-          this.mesFiltro ?? undefined,
-          this.servicioFiltro
-        );
+        const idArchivo = this.idArchivoFiltro ?? undefined;
+        const anio = this.anioFiltro ?? undefined;
+        const mes = this.mesFiltro ?? undefined;
+        return forkJoin({
+          detalle: this.dashboardService.filtrar(idArchivo, anio, mes, this.servicioFiltro),
+          actividad: this.dashboardService.filtrar(idArchivo, anio, mes).pipe(catchError(() => of([]))),
+          tendencia: this.dashboardService.filtrar(idArchivo, anio, undefined, this.servicioFiltro)
+            .pipe(catchError(() => of([])))
+        });
       })
     ).subscribe({
-      next: detalle => {
-        this.detalle = detalle;
-        this.resumen = this.resumenDesdeDetalle(detalle);
-        this.alertas = detalle.filter(item => item.alertaAltaPresion === true);
+      next: data => {
+        this.detalle = data.detalle;
+        this.datosActividad = data.actividad;
+        this.datosTendencia = data.tendencia.filter(item =>
+          this.mesFiltro === null || item.mes <= this.mesFiltro
+        );
+        this.resumen = this.resumenDesdeDetalle(data.detalle);
+        this.alertas = data.detalle.filter(item => item.alertaAltaPresion === true);
         this.cargando = false;
       },
       error: error => {
@@ -183,6 +218,70 @@ export class DashboardComponent implements OnInit {
       .format(new Date(fecha)) : 'Sin predicción reciente';
   }
 
+  get accionesSugeridas(): AccionGestion[] {
+    return this.construirAccionesSugeridas(this.registroSeleccionado);
+  }
+
+  get barrasIngresos(): BarraIngresos[] {
+    const acumulado = new Map<string, number>();
+    this.datosActividad.forEach(item => acumulado.set(
+      item.servicioHospitalario,
+      (acumulado.get(item.servicioHospitalario) ?? 0) + (Number(item.ingresos) || 0)
+    ));
+    const principales = [...acumulado.entries()]
+      .map(([servicio, valor]) => ({ servicio, valor }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 6);
+    const maximo = Math.max(...principales.map(item => item.valor), 1);
+    return principales.map(item => ({ ...item, altura: (item.valor / maximo) * 100 }));
+  }
+
+  get totalIngresosGrafico(): number {
+    return this.barrasIngresos.reduce((total, item) => total + item.valor, 0);
+  }
+
+  get puntosOcupacion(): PuntoOcupacion[] {
+    const periodos = new Map<string, { pacientesDia: number; diasCama: number; valores: number[] }>();
+    this.datosTendencia.forEach(item => {
+      const periodo = `${item.anio}-${String(item.mes).padStart(2, '0')}`;
+      const actual = periodos.get(periodo) ?? { pacientesDia: 0, diasCama: 0, valores: [] };
+      actual.pacientesDia += Number(item.pacientesCama) || 0;
+      actual.diasCama += Number(item.totalCamasDisponibles) || 0;
+      if (Number.isFinite(Number(item.ocupacionEstimada))) {
+        actual.valores.push(Number(item.ocupacionEstimada));
+      }
+      periodos.set(periodo, actual);
+    });
+    const valores = [...periodos.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([periodo, datos]) => ({
+      periodo,
+      etiqueta: `${this.nombreMes(Number(periodo.slice(5, 7))).slice(0, 3)} ${periodo.slice(2, 4)}`,
+      valor: datos.diasCama > 0
+        ? datos.pacientesDia / datos.diasCama
+        : (datos.valores.reduce((a, b) => a + b, 0) / Math.max(datos.valores.length, 1))
+    }));
+    const maximo = Math.max(1, .9, ...valores.map(item => item.valor)) * 1.08;
+    const ancho = 570;
+    return valores.map((item, indice) => ({
+      ...item,
+      x: valores.length === 1 ? 320 : 36 + (indice * ancho / (valores.length - 1)),
+      y: 210 - (item.valor / maximo) * 160
+    }));
+  }
+
+  get lineaOcupacion(): string {
+    return this.puntosOcupacion.map(punto => `${punto.x},${punto.y}`).join(' ');
+  }
+
+  get yUmbralOcupacion(): number {
+    const maximo = Math.max(1, .9, ...this.puntosOcupacion.map(item => item.valor)) * 1.08;
+    return 210 - (.9 / maximo) * 160;
+  }
+
+  get promedioOcupacionTendencia(): number {
+    const puntos = this.puntosOcupacion;
+    return puntos.length ? puntos.reduce((total, punto) => total + punto.valor, 0) / puntos.length : 0;
+  }
+
   nombreMes(mes: number): string { return this.meses[mes - 1] ?? String(mes); }
   formatearNumero(valor: number | null | undefined, decimales = 0): string {
     return new Intl.NumberFormat('es-PE', { maximumFractionDigits: decimales }).format(valor ?? 0);
@@ -192,6 +291,102 @@ export class DashboardComponent implements OnInit {
   }
   claseRiesgo(nivel?: string | null): string {
     return nivel ? `riesgo-${nivel.toLowerCase()}` : '';
+  }
+
+  clasePrioridad(prioridad: PrioridadGestion): string {
+    return `prioridad-${prioridad.toLowerCase().replace(/\s+/g, '-')}`;
+  }
+
+  private construirAccionesSugeridas(registro: DashboardDetalle | null): AccionGestion[] {
+    if (!registro) return [];
+    const ocupacion = this.numeroDisponible(registro.ocupacionEstimada);
+    const estancia = this.numeroDisponible(registro.promedioEstancia);
+    const ingresos = this.numeroDisponible(registro.ingresos);
+    const egresos = this.numeroDisponible(registro.egresos);
+    const balance = ingresos === null || egresos === null ? null : ingresos - egresos;
+    const presion = this.numeroDisponible(registro.presionIngresosCamas);
+    const diasCamaDisponibles = this.numeroDisponible(registro.totalCamasDisponibles);
+    const mediaEstancia = this.mediaReal(this.datosTendencia.map(item => item.promedioEstancia));
+    const mediaPresion = this.mediaReal(this.datosActividad.map(item => item.presionIngresosCamas));
+
+    return [
+      {
+        indicador: 'Porcentaje de ocupación',
+        valor: ocupacion === null ? 'N/D' : this.formatearPorcentaje(ocupacion),
+        prioridad: ocupacion === null ? 'NO EVALUABLE' : ocupacion > .90 ? 'ALTA' : ocupacion >= .85 ? 'MEDIA' : 'BAJA',
+        interpretacion: ocupacion === null
+          ? 'No hay un valor disponible para interpretar la ocupación observada del periodo.'
+          : ocupacion > .90
+            ? 'La ocupación observada del periodo supera el umbral operacional de alta presión utilizado en el proyecto.'
+            : 'La ocupación observada del periodo no supera el umbral operacional de alta presión utilizado en el proyecto.',
+        accion: 'Revisar disponibilidad registrada, tendencia reciente y comportamiento del servicio para priorizar su seguimiento.',
+        responsable: 'Atención de Hospitalización / Gestión de Camas'
+      },
+      {
+        indicador: 'Promedio de estancia', valor: estancia === null ? 'N/D' : `${this.formatearNumero(estancia, 2)} días`,
+        prioridad: estancia === null ? 'NO EVALUABLE' : this.prioridadRelativa(estancia, mediaEstancia),
+        interpretacion: 'Una permanencia promedio elevada puede asociarse con menor rotación de camas y requiere revisión del comportamiento del servicio.',
+        accion: 'Revisar casos con permanencias prolongadas junto con el equipo asistencial responsable, sin sugerir altas automáticas.',
+        responsable: 'Atención de Hospitalización'
+      },
+      {
+        indicador: 'Balance ingresos-egresos', valor: balance === null ? 'N/D' : this.formatearNumero(balance),
+        prioridad: balance === null ? 'NO EVALUABLE' : balance > 0 ? 'MEDIA' : 'BAJA',
+        interpretacion: balance !== null && balance > 0
+          ? 'Los ingresos registrados superan los egresos del periodo.'
+          : balance !== null && balance < 0
+            ? 'Los egresos registrados superan los ingresos del periodo.'
+            : balance === 0
+              ? 'Los ingresos y egresos presentan un comportamiento equilibrado.'
+              : 'No hay datos suficientes para interpretar el balance del periodo.',
+        accion: 'Revisar la evolución mensual de ingresos y egresos registrados.',
+        responsable: 'Admisión y Registros Médicos'
+      },
+      {
+        indicador: 'Presión ingresos/camas', valor: presion === null ? 'N/D' : this.formatearNumero(presion, 2),
+        prioridad: presion === null ? 'NO EVALUABLE' : this.prioridadRelativa(presion, mediaPresion),
+        interpretacion: 'Representa la relación entre los ingresos hospitalarios y las camas registradas durante el periodo.',
+        accion: 'Priorizar el seguimiento de servicios con mayor presión y revisar su tendencia reciente.',
+        responsable: 'Atención de Hospitalización / Gestión de Camas'
+      },
+      {
+        indicador: 'Días-cama disponibles',
+        valor: diasCamaDisponibles === null ? 'N/D' : this.formatearNumero(diasCamaDisponibles),
+        prioridad: diasCamaDisponibles === null ? 'NO EVALUABLE' : diasCamaDisponibles <= 0 ? 'ALTA' : 'BAJA',
+        interpretacion: 'Representa la capacidad mensual registrada en días-cama disponibles para el servicio y periodo analizado.',
+        accion: 'Verificar la consistencia de la capacidad mensual registrada y considerarla junto con la ocupación y la presión ingresos/camas para la revisión del servicio.',
+        responsable: 'Admisión / Atención de Hospitalización'
+      }
+    ];
+  }
+
+  private prioridadRelativa(valor: number, referencia: number): PrioridadGestion {
+    if (referencia <= 0 || valor <= referencia) return 'BAJA';
+    return valor >= referencia * 1.25 ? 'ALTA' : 'MEDIA';
+  }
+
+  private mediaReal(valores: Array<number | null | undefined>): number {
+    const validos = valores.map(valor => this.numeroDisponible(valor)).filter((valor): valor is number => valor !== null);
+    return validos.length ? validos.reduce((a, b) => a + b, 0) / validos.length : 0;
+  }
+
+  private numeroDisponible(valor: unknown): number | null {
+    if (valor === null || valor === undefined || valor === '') return null;
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : null;
+  }
+
+  private establecerDatosVisualesBase(detalle: DashboardDetalle[]): void {
+    const base = detalle[0];
+    if (!base) {
+      this.datosActividad = [];
+      this.datosTendencia = [];
+      return;
+    }
+    this.datosActividad = detalle.filter(item => item.anio === base.anio && item.mes === base.mes);
+    this.datosTendencia = detalle.filter(item =>
+      item.anio === base.anio && item.servicioHospitalario === base.servicioHospitalario
+    );
   }
 
   private sumar(campo: keyof DashboardDetalle): number {
