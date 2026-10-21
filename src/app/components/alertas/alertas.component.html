@@ -106,19 +106,19 @@
 
           <div class="alerta-body">
             <p class="alerta-mensaje">
-              {{ alerta.alerta }}
+              Alerta binaria de alta presión para {{ alerta.periodoPredicho }}.
             </p>
 
             <p class="interpretacion">
-              {{ alerta.interpretacion }}
+              {{ alerta.descripcionRiesgo }}
             </p>
           </div>
 
           <div class="indicadores-grid">
 
             <div class="indicador-item">
-              <span>Probabilidad</span>
-              <strong>{{ convertirPorcentaje(alerta.probabilidad) }}</strong>
+              <span>Probabilidad de superar 90%</span>
+              <strong>{{ formatearProbabilidad(alerta.probabilidadAltaPresion) }}</strong>
             </div>
 
             <div class="indicador-item">
@@ -156,8 +156,8 @@
             </div>
 
             <div>
-              <span>Camas disponibles</span>
-              <strong>{{ mostrarNumero(alerta.camasDisponiblesHabilitadas) }}</strong>
+              <span>Días-cama disponibles</span>
+              <strong>{{ mostrarNumero(alerta.totalCamasDisponibles) }}</strong>
             </div>
 
           </div>

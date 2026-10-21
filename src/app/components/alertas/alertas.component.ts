@@ -65,7 +65,7 @@ export class AlertasComponent implements OnInit {
 
   obtenerClaseRiesgo(nivelRiesgo: string | null | undefined): string {
     if (!nivelRiesgo) {
-      return 'badge-bajo';
+      return '';
     }
 
     const riesgo = nivelRiesgo.toUpperCase();
@@ -78,12 +78,12 @@ export class AlertasComponent implements OnInit {
       return 'badge-medio';
     }
 
-    return 'badge-bajo';
+    return riesgo === 'BAJO' ? 'badge-bajo' : '';
   }
 
   convertirPorcentaje(valor: number | null | undefined): string {
-    if (valor === null || valor === undefined) {
-      return '0%';
+    if (valor === null || valor === undefined || !Number.isFinite(valor)) {
+      return 'N/D';
     }
 
     if (valor <= 1) {
@@ -95,6 +95,12 @@ export class AlertasComponent implements OnInit {
 
   mostrarNumero(valor: number | null | undefined): number {
     return valor ?? 0;
+  }
+
+  formatearProbabilidad(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)
+        || valor < 0 || valor > 1) return 'N/D';
+    return `${(valor * 100).toFixed(2)}%`;
   }
     contarRiesgoAlto(): number {
     return this.alertas.filter(alerta => alerta.nivelRiesgo?.toUpperCase() === 'ALTO').length;

@@ -1,4 +1,5 @@
 import { ErrorValidacion } from './error-validacion';
+import { PendienteCalidad } from './pendiente-calidad';
 
 export interface ResumenCargaExcel {
   idArchivo: number;
@@ -13,6 +14,9 @@ export interface ResumenCargaExcel {
   totalFilasInvalidas?: number;
   totalRegistrosValidos?: number;
   totalPrediccionesGeneradas: number;
+  totalGruposPendientes: number;
+  totalRegistrosPendientes: number;
+  pendientesCalidad: PendienteCalidad[];
   advertencias: string[];
   columnasEncontradas: string[];
   columnasMinimasFormatoInterno: string[];

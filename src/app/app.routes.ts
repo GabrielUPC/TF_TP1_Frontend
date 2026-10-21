@@ -62,6 +62,11 @@ export const routes: Routes = [
     data: { roles: ['ADMINISTRADOR'] }
   },
   {
+    path: 'prediccion-binaria',
+    redirectTo: 'dashboard',
+    pathMatch: 'full'
+  },
+  {
     path: 'configuracion',
     component: ConfiguracionComponent,
     canActivate: [authGuard, roleGuard],

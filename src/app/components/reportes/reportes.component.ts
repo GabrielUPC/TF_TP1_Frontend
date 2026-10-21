@@ -218,6 +218,12 @@ export class ReportesComponent implements OnInit {
     return `${porcentaje.toFixed(1)}%`;
   }
 
+  formatearProbabilidad(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || !Number.isFinite(valor)
+        || valor < 0 || valor > 1) return 'N/D';
+    return `${(valor * 100).toFixed(1)}%`;
+  }
+
   formatearNumero(
     valor: number | null | undefined,
     decimales = 2
@@ -241,7 +247,9 @@ export class ReportesComponent implements OnInit {
       'Periodo base',
       'Periodo predicho',
       'Riesgo predicho',
-      'Confianza del modelo',
+      'Probabilidad de alta presión en t+1',
+      'Threshold operacional',
+      'Alerta operacional',
       'Ocupación',
       'Presión ingresos/camas',
       'Promedio estancia',
@@ -258,7 +266,9 @@ export class ReportesComponent implements OnInit {
       this.formatearPeriodoBase(reporte),
       this.formatearPeriodoPredicho(reporte),
       reporte.nivelRiesgo,
-      this.convertirPorcentaje(reporte.probabilidad),
+      this.formatearProbabilidad(reporte.probabilidadAltaPresion),
+      this.formatearProbabilidad(reporte.threshold),
+      this.formatearAlerta(reporte.alertaAltaPresion),
       this.convertirPorcentaje(reporte.ocupacionEstimada),
       this.formatearNumero(reporte.presionIngresosCamas),
       this.formatearNumero(reporte.promedioEstancia),
@@ -277,10 +287,18 @@ export class ReportesComponent implements OnInit {
     const enlace = document.createElement('a');
     enlace.href = url;
     enlace.download = `reportes_filtrados_${new Date().toISOString().slice(0, 10)}.csv`;
+    enlace.style.display = 'none';
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  formatearAlerta(valor: boolean | null | undefined): string {
+    if (valor === null || valor === undefined) {
+      return 'N/D';
+    }
+    return valor ? 'ACTIVA' : 'NO ACTIVA';
   }
 
   private get catalogoSegunArchivo(): Reporte[] {

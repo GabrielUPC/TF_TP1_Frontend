@@ -137,7 +137,11 @@ export class CargaExcelComponent {
   }
 
   esCargaExitosa(): boolean {
-    return this.resultado?.estadoValidacion === 'VALIDADO'
-      && this.resultado?.estadoProcesamiento === 'PROCESADO';
+    return ['VALIDADO', 'VALIDADO_CON_PENDIENTES'].includes(this.resultado?.estadoValidacion || '')
+      && ['PROCESADO', 'PROCESADO_PARCIAL'].includes(this.resultado?.estadoProcesamiento || '');
+  }
+
+  tienePendientes(): boolean {
+    return (this.resultado?.totalGruposPendientes || 0) > 0;
   }
 }

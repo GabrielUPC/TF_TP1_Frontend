@@ -149,6 +149,11 @@ export class UsuariosComponent implements OnInit {
     return;
   }
 
+  if (this.rolSeleccionadoRequiereIpress() && !this.nuevoUsuario.idIpress) {
+    this.error = 'Seleccione una IPRESS para el rol operativo asignado.';
+    return;
+  }
+
   this.guardando = true;
 
   if (this.modoEdicion) {
@@ -161,7 +166,10 @@ export class UsuariosComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al actualizar usuario:', error);
-        this.error = 'No se pudo actualizar el usuario. Verifica los datos ingresados.';
+        this.error = this.obtenerMensajeError(
+          error,
+          'No se pudo actualizar el usuario. Verifica los datos ingresados.'
+        );
         this.guardando = false;
       }
     });
@@ -178,11 +186,26 @@ export class UsuariosComponent implements OnInit {
     },
     error: (error) => {
       console.error('Error al registrar usuario:', error);
-      this.error = 'No se pudo registrar el usuario. Verifica los datos ingresados.';
+      this.error = this.obtenerMensajeError(
+        error,
+        'No se pudo registrar el usuario. Verifica los datos ingresados.'
+      );
       this.guardando = false;
     }
   });
 }
+
+  rolSeleccionadoRequiereIpress(): boolean {
+    const rol = this.roles.find(item => item.idRol === this.nuevoUsuario.idRol);
+    return rol?.nombreRol === 'ADMISION_REGISTROS'
+      || rol?.nombreRol === 'ATENCION_HOSPITALIZACION';
+  }
+
+  private obtenerMensajeError(error: any, mensajePredeterminado: string): string {
+    return error?.error?.detail
+      || error?.error?.message
+      || mensajePredeterminado;
+  }
   editarUsuario(usuario: Usuario): void {
   this.error = '';
   this.mensaje = '';

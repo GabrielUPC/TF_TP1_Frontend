@@ -196,6 +196,12 @@ button:disabled {
 .errores-section {
   margin-top: 24px;
 }
+.pendientes-section { margin-top: 24px; padding: 16px; border: 1px solid #f59e0b; border-radius: 14px; background: #fffbeb; color: #78350f; }
+.pendientes-section h3 { margin: 0 0 8px; }
+.tabla-pendientes { width: 100%; border-collapse: collapse; min-width: 900px; background: #fff; }
+.tabla-pendientes th, .tabla-pendientes td { padding: 12px; border-bottom: 1px solid #fde68a; text-align: left; }
+.tabla-pendientes th { background: #fef3c7; }
+.pendiente-item { border-color: #f59e0b; background: #fffbeb; }
 
 .advertencias-section {
   margin-top: 24px;

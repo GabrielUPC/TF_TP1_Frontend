@@ -66,7 +66,7 @@
 
     <div class="resultado-header" [ngClass]="esCargaExitosa() ? 'success' : 'danger'">
       <div>
-        <h3>{{ esCargaExitosa() ? 'Carga procesada correctamente' : 'Carga con observaciones' }}</h3>
+        <h3>{{ tienePendientes() ? (esCargaExitosa() ? 'Carga procesada parcialmente' : 'Carga pendiente de validación') : (esCargaExitosa() ? 'Carga procesada correctamente' : 'Carga con observaciones') }}</h3>
         <p>{{ resultado.mensaje }}</p>
       </div>
 
@@ -111,6 +111,14 @@
         <span>Predicciones generadas</span>
         <strong>{{ resultado.totalPrediccionesGeneradas }}</strong>
       </div>
+      <div class="resultado-item pendiente-item">
+        <span>Servicios/mes pendientes</span>
+        <strong>{{ resultado.totalGruposPendientes || 0 }}</strong>
+      </div>
+      <div class="resultado-item pendiente-item">
+        <span>Registros conservados como pendientes</span>
+        <strong>{{ resultado.totalRegistrosPendientes || 0 }}</strong>
+      </div>
 
     </div>
 
@@ -124,6 +132,24 @@
         </li>
       </ul>
 
+    </div>
+
+    <div *ngIf="tienePendientes()" class="pendientes-section">
+      <h3>Sin predicción: datos pendientes de validación</h3>
+      <p>Estos servicios y meses se conservaron con trazabilidad, pero no se usaron para generar una predicción.</p>
+      <div class="table-responsive">
+        <table class="tabla-pendientes">
+          <thead><tr><th>Fila</th><th>IPRESS</th><th>Periodo</th><th>Servicio</th><th>Regla</th><th>Motivo</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let pendiente of resultado.pendientesCalidad">
+              <td>{{ pendiente.fila }}</td><td>{{ pendiente.codigoIpress }}</td>
+              <td>{{ pendiente.anio }}-{{ pendiente.mes | number:'2.0-0' }}</td>
+              <td>{{ pendiente.servicioHospitalario }}</td><td>{{ pendiente.regla }}</td>
+              <td>{{ pendiente.motivo }}</td><td>Sin predicción</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div *ngIf="resultado.errores && resultado.errores.length > 0" class="errores-section">
