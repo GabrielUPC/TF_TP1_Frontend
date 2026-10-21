@@ -166,7 +166,9 @@
             <th>Periodo base</th>
             <th>Periodo predicho</th>
             <th>Riesgo predicho</th>
-            <th>Probabilidad de la clase predicha</th>
+            <th>Probabilidad de alta presión en t+1</th>
+            <th>Threshold operacional</th>
+            <th>Alerta operacional</th>
             <th>Ocupación</th>
             <th>Presión ingresos/camas</th>
             <th>Promedio estancia</th>
@@ -194,6 +196,8 @@
               </span>
             </td>
             <td>{{ formatearProbabilidad(reporte.probabilidadAltaPresion) }}</td>
+            <td>{{ formatearProbabilidad(reporte.threshold) }}</td>
+            <td>{{ formatearAlerta(reporte.alertaAltaPresion) }}</td>
             <td>{{ convertirPorcentaje(reporte.ocupacionEstimada) }}</td>
             <td>{{ formatearNumero(reporte.presionIngresosCamas) }}</td>
             <td>{{ formatearNumero(reporte.promedioEstancia) }}</td>

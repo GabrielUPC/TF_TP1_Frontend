@@ -101,7 +101,7 @@
           <p>{{ nombreMes(registro.mes) }} {{ registro.anio }} · {{ registro.nombreArchivo }}</p></div>
       </div>
       <div class="decision-grid">
-        <article><span>Promedio de estancia</span><strong>{{ formatearNumero(registro.promedioEstancia, 2) }} días</strong></article>
+        <article><span>Promedio de estancia</span><strong>{{ formatearDias(registro.promedioEstancia) }}</strong></article>
         <article><span>Rotación de camas</span><strong>{{ formatearNumero(registro.rotacionCamas, 2) }}</strong></article>
         <article><span>Camas físicas habilitadas</span><strong>{{ registro.camasDisponiblesHabilitadas == null ? 'N/D' : formatearNumero(registro.camasDisponiblesHabilitadas) }}</strong></article>
         <article><span>Predicción asociada</span><strong>{{ registro.idPrediccion ? 'Vigente' : 'No generada' }}</strong></article>

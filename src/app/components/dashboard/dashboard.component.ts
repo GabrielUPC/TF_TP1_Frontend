@@ -210,8 +210,8 @@ export class DashboardComponent implements OnInit {
   get totalPacientesCama(): number { return this.sumar('pacientesCama'); }
   get totalCamas(): number { return this.sumar('camasTotales'); }
   get totalDiasCama(): number { return this.sumar('totalCamasDisponibles'); }
-  get ocupacionPromedio(): number { return this.promedio('ocupacionEstimada'); }
-  get presionPromedio(): number { return this.promedio('presionIngresosCamas'); }
+  get ocupacionPromedio(): number | null { return this.promedio('ocupacionEstimada'); }
+  get presionPromedio(): number | null { return this.promedio('presionIngresosCamas'); }
   get ultimaActualizacion(): string {
     const fecha = this.resultado ? new Date() : this.detalle.find(d => d.fechaPrediccion)?.fechaPrediccion;
     return fecha ? new Intl.DateTimeFormat('es-PE', { dateStyle: 'short', timeStyle: 'short' })
@@ -247,18 +247,26 @@ export class DashboardComponent implements OnInit {
       const actual = periodos.get(periodo) ?? { pacientesDia: 0, diasCama: 0, valores: [] };
       actual.pacientesDia += Number(item.pacientesCama) || 0;
       actual.diasCama += Number(item.totalCamasDisponibles) || 0;
-      if (Number.isFinite(Number(item.ocupacionEstimada))) {
-        actual.valores.push(Number(item.ocupacionEstimada));
+      const ocupacion = this.numeroDisponible(item.ocupacionEstimada);
+      if (ocupacion !== null) {
+        actual.valores.push(ocupacion);
       }
       periodos.set(periodo, actual);
     });
-    const valores = [...periodos.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([periodo, datos]) => ({
-      periodo,
-      etiqueta: `${this.nombreMes(Number(periodo.slice(5, 7))).slice(0, 3)} ${periodo.slice(2, 4)}`,
-      valor: datos.diasCama > 0
-        ? datos.pacientesDia / datos.diasCama
-        : (datos.valores.reduce((a, b) => a + b, 0) / Math.max(datos.valores.length, 1))
-    }));
+    const valores = [...periodos.entries()].sort(([a], [b]) => a.localeCompare(b))
+      .map(([periodo, datos]) => {
+        const valor = datos.diasCama > 0
+          ? datos.pacientesDia / datos.diasCama
+          : datos.valores.length
+            ? datos.valores.reduce((a, b) => a + b, 0) / datos.valores.length
+            : null;
+        return valor === null ? null : {
+          periodo,
+          etiqueta: `${this.nombreMes(Number(periodo.slice(5, 7))).slice(0, 3)} ${periodo.slice(2, 4)}`,
+          valor
+        };
+      })
+      .filter((item): item is { periodo: string; etiqueta: string; valor: number } => item !== null);
     const maximo = Math.max(1, .9, ...valores.map(item => item.valor)) * 1.08;
     const ancho = 570;
     return valores.map((item, indice) => ({
@@ -284,10 +292,18 @@ export class DashboardComponent implements OnInit {
 
   nombreMes(mes: number): string { return this.meses[mes - 1] ?? String(mes); }
   formatearNumero(valor: number | null | undefined, decimales = 0): string {
-    return new Intl.NumberFormat('es-PE', { maximumFractionDigits: decimales }).format(valor ?? 0);
+    const numero = this.numeroDisponible(valor);
+    return numero === null
+      ? 'N/D'
+      : new Intl.NumberFormat('es-PE', { maximumFractionDigits: decimales }).format(numero);
   }
   formatearPorcentaje(valor: number | null | undefined): string {
-    return valor === null || valor === undefined ? 'N/D' : `${(valor * 100).toFixed(1)}%`;
+    const numero = this.numeroDisponible(valor);
+    return numero === null ? 'N/D' : `${(numero * 100).toFixed(1)}%`;
+  }
+  formatearDias(valor: number | null | undefined): string {
+    const numero = this.numeroDisponible(valor);
+    return numero === null ? 'N/D' : `${this.formatearNumero(numero, 2)} días`;
   }
   claseRiesgo(nivel?: string | null): string {
     return nivel ? `riesgo-${nivel.toLowerCase()}` : '';
@@ -392,9 +408,11 @@ export class DashboardComponent implements OnInit {
   private sumar(campo: keyof DashboardDetalle): number {
     return this.detalle.reduce((a, d) => a + (Number(d[campo]) || 0), 0);
   }
-  private promedio(campo: keyof DashboardDetalle): number {
-    const valores = this.detalle.map(d => Number(d[campo])).filter(Number.isFinite);
-    return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0;
+  private promedio(campo: keyof DashboardDetalle): number | null {
+    const valores = this.detalle
+      .map(d => this.numeroDisponible(d[campo]))
+      .filter((valor): valor is number => valor !== null);
+    return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
   }
   private resumenDesdeDetalle(d: DashboardDetalle[]): DashboardResumen {
     const predicciones = d.filter(x => x.idPrediccion != null);
