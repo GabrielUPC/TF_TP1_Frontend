@@ -1,3 +1,4 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardDetalle } from '../../models/dashboard-detalle';
 import { DashboardResumen } from '../../models/dashboard-resumen';
@@ -199,5 +200,69 @@ describe('DashboardComponent - consulta observacional CP026', () => {
 
     expect(component.error).toContain('seis meses consecutivos');
     expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
+});
+
+describe('DashboardComponent - estado vacio CP024', () => {
+  let fixture: ComponentFixture<DashboardComponent>;
+  let dashboardService: jasmine.SpyObj<DashboardService>;
+  let prediccionService: jasmine.SpyObj<PrediccionBinariaService>;
+
+  beforeEach(async () => {
+    dashboardService = jasmine.createSpyObj<DashboardService>('DashboardService',
+      ['obtenerResumen', 'obtenerDetalle', 'obtenerAlertas', 'filtrar']);
+    prediccionService = jasmine.createSpyObj<PrediccionBinariaService>('PrediccionBinariaService',
+      ['obtenerCatalogo', 'predecir']);
+    const archivoService = jasmine.createSpyObj<ArchivoService>('ArchivoService',
+      ['listarArchivosProcesados']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['obtenerUsuarioActual']);
+
+    dashboardService.obtenerResumen.and.returnValue(of({} as DashboardResumen));
+    dashboardService.obtenerDetalle.and.returnValue(of([]));
+    dashboardService.obtenerAlertas.and.returnValue(of([]));
+    prediccionService.obtenerCatalogo.and.returnValue(of({
+      codigoIpress: '00007636', nombreIpress: 'IPRESS QA SINTETICA', servicios: []
+    }));
+    archivoService.listarArchivosProcesados.and.returnValue(of([]));
+    authService.obtenerUsuarioActual.and.returnValue(null);
+
+    await TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [
+        { provide: DashboardService, useValue: dashboardService },
+        { provide: PrediccionBinariaService, useValue: prediccionService },
+        { provide: ArchivoService, useValue: archivoService },
+        { provide: AuthService, useValue: authService }
+      ]
+    }).compileComponents();
+    fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+  });
+
+  function comprobarEstadoVacio(mensaje: string): void {
+    const vista = fixture.nativeElement as HTMLElement;
+    expect(vista.querySelector('.empty-state strong')?.textContent?.trim())
+      .toBe('No hay datos observados para mostrar');
+    expect(vista.querySelector('.empty-state span')?.textContent?.trim()).toBe(mensaje);
+    expect(vista.querySelector('.kpi-card')).toBeNull();
+    expect(vista.querySelector('.observed-charts')).toBeNull();
+    expect(fixture.componentInstance.registroSeleccionado).toBeNull();
+    expect(prediccionService.predecir).not.toHaveBeenCalled();
+  }
+
+  it('muestra los mensajes literales de la vista general sin registros', () => {
+    expect(dashboardService.obtenerDetalle).toHaveBeenCalledWith(undefined);
+    comprobarEstadoVacio('Carga información hospitalaria válida o limpia los filtros.');
+  });
+
+  it('mantiene el mensaje específico de un archivo seleccionado sin registros', () => {
+    fixture.componentInstance.idArchivoFiltro = 45;
+    fixture.componentInstance.consultarArchivoObservado();
+    fixture.detectChanges();
+
+    expect(dashboardService.obtenerDetalle).toHaveBeenCalledWith(45);
+    comprobarEstadoVacio(
+      'Este archivo no tiene registros observados disponibles. Selecciona otro archivo o pulsa Limpiar.'
+    );
   });
 });
