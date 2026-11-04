@@ -3,6 +3,7 @@ export interface ArchivoCargado {
   nombreArchivo: string;
   formato: string;
   fechaCarga: string;
+  fechaCargaUtc?: string | null;
   estadoValidacion: string;
   estadoProcesamiento: string;
   nombreUsuario: string;

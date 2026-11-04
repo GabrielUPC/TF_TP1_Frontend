@@ -12,6 +12,12 @@ import { ArchivoCargado } from '../../models/archivo-cargado';
 })
 export class ArchivosComponent implements OnInit {
 
+  private readonly formatoFechaLima = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Lima',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  });
+
   archivos: ArchivoCargado[] = [];
   archivosFiltrados: ArchivoCargado[] = [];
 
@@ -77,6 +83,23 @@ export class ArchivosComponent implements OnInit {
     this.filtroTexto = '';
     this.filtroEstado = 'TODOS';
     this.archivosFiltrados = this.archivos;
+  }
+
+  mostrarFechaCarga(archivo: ArchivoCargado): string {
+    if (archivo.fechaCargaUtc) {
+      const instante = new Date(archivo.fechaCargaUtc);
+      if (!Number.isNaN(instante.getTime())) {
+        const partes = Object.fromEntries(
+          this.formatoFechaLima.formatToParts(instante).map(parte => [parte.type, parte.value])
+        );
+        return `${partes['day']}/${partes['month']}/${partes['year']} ${partes['hour']}:${partes['minute']}`;
+      }
+    }
+
+    const historica = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(archivo.fechaCarga || '');
+    return historica
+      ? `${historica[3]}/${historica[2]}/${historica[1]} ${historica[4]}:${historica[5]}`
+      : 'N/D';
   }
 
   obtenerClaseEstado(estado: string | null | undefined): string {

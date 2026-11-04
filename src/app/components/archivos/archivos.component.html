@@ -98,7 +98,13 @@
 
             <td>{{ archivo.formato }}</td>
 
-            <td>{{ archivo.fechaCarga | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              {{ mostrarFechaCarga(archivo) }}
+              <small *ngIf="archivo.fechaCargaUtc; else fechaHistorica" class="fecha-zona">Hora de Perú</small>
+              <ng-template #fechaHistorica>
+                <small class="fecha-zona">Zona histórica no verificada</small>
+              </ng-template>
+            </td>
 
             <td>
               <span class="badge-estado" [ngClass]="obtenerClaseEstado(archivo.estadoValidacion)">
