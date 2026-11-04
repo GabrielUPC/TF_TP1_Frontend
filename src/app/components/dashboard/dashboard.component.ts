@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { catchError, forkJoin, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ArchivoProcesado } from '../../models/archivo-procesado';
 import { DashboardDetalle } from '../../models/dashboard-detalle';
@@ -62,6 +62,7 @@ export class DashboardComponent implements OnInit {
   datosTendencia: DashboardDetalle[] = [];
   cargando = false;
   error = '';
+  private solicitudVersion = 0;
 
   readonly meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -78,26 +79,42 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void { this.cargarDashboard(); }
 
   cargarDashboard(): void {
+    this.consultarArchivoObservado();
+    forkJoin({
+      catalogo: this.prediccionService.obtenerCatalogo().pipe(catchError(() => of(null))),
+      archivos: this.archivoService.listarArchivosProcesados().pipe(catchError(() => of([])))
+    }).subscribe(data => {
+      this.catalogo = data.catalogo;
+      this.archivosProcesados = data.archivos;
+    });
+  }
+
+  consultarArchivoObservado(): void {
+    const version = ++this.solicitudVersion;
+    const idArchivo = this.idArchivoFiltro ?? undefined;
     this.cargando = true;
     this.error = '';
+    this.resultado = null;
+    this.resumen = null;
+    this.detalle = [];
+    this.alertas = [];
+    this.establecerDatosVisualesBase([]);
     forkJoin({
-      resumen: this.dashboardService.obtenerResumen(),
-      detalle: this.dashboardService.obtenerDetalle(),
-      alertas: this.dashboardService.obtenerAlertas(),
-      catalogo: this.prediccionService.obtenerCatalogo(),
-      archivos: this.archivoService.listarArchivosProcesados().pipe(catchError(() => of([])))
+      resumen: this.dashboardService.obtenerResumen(idArchivo),
+      detalle: this.dashboardService.obtenerDetalle(idArchivo),
+      alertas: this.dashboardService.obtenerAlertas(idArchivo)
     }).subscribe({
       next: data => {
+        if (version !== this.solicitudVersion) return;
         this.resumen = data.resumen;
-        this.detalle = data.detalle;
-        this.establecerDatosVisualesBase(data.detalle);
-        this.alertas = data.alertas;
-        this.catalogo = data.catalogo;
-        this.archivosProcesados = data.archivos;
+        this.detalle = data.detalle ?? [];
+        this.establecerDatosVisualesBase(this.detalle);
+        this.alertas = data.alertas ?? [];
         this.cargando = false;
       },
       error: () => {
-        this.error = 'No se pudo cargar el dashboard. Verifica que el backend esté activo.';
+        if (version !== this.solicitudVersion) return;
+        this.error = 'No se pudo cargar la información observada. Verifica la conexión e intenta nuevamente.';
         this.cargando = false;
       }
     });
@@ -113,6 +130,7 @@ export class DashboardComponent implements OnInit {
       this.error = 'El periodo no tiene una ventana válida de seis meses consecutivos.';
       return;
     }
+    const version = ++this.solicitudVersion;
     this.cargando = true;
     this.error = '';
     this.resultado = null;
@@ -121,7 +139,6 @@ export class DashboardComponent implements OnInit {
       periodo_actual: periodo
     }).pipe(
       switchMap(resultado => {
-        this.resultado = resultado;
         const idArchivo = this.idArchivoFiltro ?? undefined;
         const anio = this.anioFiltro ?? undefined;
         const mes = this.mesFiltro ?? undefined;
@@ -130,10 +147,12 @@ export class DashboardComponent implements OnInit {
           actividad: this.dashboardService.filtrar(idArchivo, anio, mes).pipe(catchError(() => of([]))),
           tendencia: this.dashboardService.filtrar(idArchivo, anio, undefined, this.servicioFiltro)
             .pipe(catchError(() => of([])))
-        });
+        }).pipe(map(data => ({ ...data, resultado })));
       })
     ).subscribe({
       next: data => {
+        if (version !== this.solicitudVersion) return;
+        this.resultado = data.resultado;
         this.detalle = data.detalle;
         this.datosActividad = data.actividad;
         this.datosTendencia = data.tendencia.filter(item =>
@@ -144,6 +163,7 @@ export class DashboardComponent implements OnInit {
         this.cargando = false;
       },
       error: error => {
+        if (version !== this.solicitudVersion) return;
         const cuerpo = error?.error as PrediccionBinariaAutomaticaError | undefined;
         const detalle = typeof error?.error?.detail === 'string'
           ? error.error.detail

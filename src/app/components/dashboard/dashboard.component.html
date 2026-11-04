@@ -11,7 +11,20 @@
     </div>
   </header>
 
-  <section class="filter-panel" aria-label="Filtro único del dashboard">
+  <section class="filter-panel observed-filter-panel" aria-label="Consulta de datos observados">
+    <div class="filter-title"><span>Datos observados</span><strong>Consultar archivo hospitalario</strong></div>
+    <div class="filter-field file-field">
+      <label for="archivoFiltro">Archivo observado (opcional)</label>
+      <select id="archivoFiltro" [(ngModel)]="idArchivoFiltro"
+              (ngModelChange)="consultarArchivoObservado()">
+        <option [ngValue]="null">Todos los archivos disponibles</option>
+        <option *ngFor="let archivo of archivosProcesados" [ngValue]="archivo.idArchivo">{{ archivo.nombreArchivo }}</option>
+      </select>
+    </div>
+    <p>La selección actualiza los indicadores observados sin ejecutar una predicción.</p>
+  </section>
+
+  <section class="filter-panel" aria-label="Análisis predictivo">
     <div class="filter-title"><span>Analizar periodo</span><strong>Ventanas válidas de seis meses</strong></div>
     <div class="filter-grid">
       <div class="filter-field ipress-field">
@@ -39,13 +52,6 @@
           <option *ngFor="let mes of mesesDisponibles" [ngValue]="mes">{{ nombreMes(mes) }}</option>
         </select>
       </div>
-      <div class="filter-field file-field">
-        <label for="archivoFiltro">Archivo observado (opcional)</label>
-        <select id="archivoFiltro" [(ngModel)]="idArchivoFiltro">
-          <option [ngValue]="null">Todos</option>
-          <option *ngFor="let archivo of archivosProcesados" [ngValue]="archivo.idArchivo">{{ archivo.nombreArchivo }}</option>
-        </select>
-      </div>
       <div class="filter-actions">
         <button class="btn-apply" type="button" (click)="analizarPeriodo()" [disabled]="cargando">Analizar periodo</button>
         <button class="btn-clear" type="button" (click)="limpiarFiltros()" [disabled]="cargando">Limpiar</button>
@@ -53,6 +59,9 @@
     </div>
   </section>
 
+  <div *ngIf="!cargando && !error && serviciosDisponibles.length === 0" class="state-card">
+    No hay ventanas de seis meses consecutivos para predicción. Puedes consultar los datos observados por archivo.
+  </div>
   <div *ngIf="cargando" class="state-card"><span class="state-dot"></span>Procesando información...</div>
   <div *ngIf="error" class="state-card state-error"><strong>No se pudo completar el análisis</strong><span>{{ error }}</span></div>
 
@@ -192,7 +201,9 @@
 
     <div *ngIf="detalle.length === 0 && !error" class="state-card empty-state">
       <strong>No hay datos observados para mostrar</strong>
-      <span>Carga información hospitalaria válida o limpia los filtros.</span>
+      <span>{{ idArchivoFiltro === null
+        ? 'Carga información hospitalaria válida.'
+        : 'Este archivo no tiene registros observados disponibles. Selecciona otro archivo o pulsa Limpiar.' }}</span>
     </div>
   </ng-container>
 </div>
