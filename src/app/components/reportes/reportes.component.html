@@ -48,7 +48,7 @@
           <option
             *ngFor="let archivo of archivosProcesados"
             [ngValue]="archivo.idArchivo">
-            {{ archivo.nombreArchivo }}
+            {{ archivo.nombreArchivo }} (ID {{ archivo.idArchivo }})
           </option>
         </select>
       </div>

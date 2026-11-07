@@ -138,9 +138,10 @@ export class ReportesComponent implements OnInit {
       return 'Todos los archivos disponibles';
     }
 
-    return this.archivosProcesados.find(
+    const archivo = this.archivosProcesados.find(
       (archivo) => archivo.idArchivo === this.idArchivoFiltro
-    )?.nombreArchivo ?? 'Sin archivo';
+    );
+    return archivo ? `${archivo.nombreArchivo} (ID ${archivo.idArchivo})` : 'Sin archivo';
   }
 
   get aniosDisponibles(): number[] {
