@@ -18,7 +18,7 @@
       <select id="archivoFiltro" [(ngModel)]="idArchivoFiltro"
               (ngModelChange)="consultarArchivoObservado()">
         <option [ngValue]="null">Todos los archivos disponibles</option>
-        <option *ngFor="let archivo of archivosProcesados" [ngValue]="archivo.idArchivo">{{ archivo.nombreArchivo }}</option>
+        <option *ngFor="let archivo of archivosProcesados" [ngValue]="archivo.idArchivo">{{ archivo.nombreArchivo }} (ID {{ archivo.idArchivo }})</option>
       </select>
     </div>
     <p>La selección actualiza los indicadores observados sin ejecutar una predicción.</p>

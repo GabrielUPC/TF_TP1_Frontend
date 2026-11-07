@@ -266,3 +266,72 @@ describe('DashboardComponent - estado vacio CP024', () => {
     );
   });
 });
+
+describe('DashboardComponent - archivos observados con nombres repetidos', () => {
+  let fixture: ComponentFixture<DashboardComponent>;
+  let dashboardService: jasmine.SpyObj<DashboardService>;
+  let prediccionService: jasmine.SpyObj<PrediccionBinariaService>;
+
+  beforeEach(async () => {
+    dashboardService = jasmine.createSpyObj<DashboardService>('DashboardService',
+      ['obtenerResumen', 'obtenerDetalle', 'obtenerAlertas', 'filtrar']);
+    prediccionService = jasmine.createSpyObj<PrediccionBinariaService>('PrediccionBinariaService',
+      ['obtenerCatalogo', 'predecir']);
+    const archivoService = jasmine.createSpyObj<ArchivoService>('ArchivoService',
+      ['listarArchivosProcesados']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['obtenerUsuarioActual']);
+    const archivos = [1, 4].map(idArchivo => ({
+      idArchivo, nombreArchivo: 'ConsultaD1_2025_v20.csv',
+      fechaCarga: '2025-01-01T00:00:00', formatoDetectado: 'DATASET_D1',
+      registrosValidos: 1, prediccionesGeneradas: 1
+    }));
+    const registros = [
+      detalle({ idArchivo: 1, nombreArchivo: archivos[0].nombreArchivo, ingresos: 10 }),
+      detalle({ idArchivo: 4, nombreArchivo: archivos[1].nombreArchivo, ingresos: 20 })
+    ];
+
+    dashboardService.obtenerResumen.and.returnValue(of({} as DashboardResumen));
+    dashboardService.obtenerDetalle.and.callFake(idArchivo => of(
+      idArchivo === undefined ? registros : registros.filter(item => item.idArchivo === idArchivo)
+    ));
+    dashboardService.obtenerAlertas.and.returnValue(of([]));
+    prediccionService.obtenerCatalogo.and.returnValue(of({
+      codigoIpress: '00007636', nombreIpress: 'IPRESS QA SINTETICA', servicios: []
+    }));
+    archivoService.listarArchivosProcesados.and.returnValue(of(archivos));
+    authService.obtenerUsuarioActual.and.returnValue(null);
+
+    await TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [
+        { provide: DashboardService, useValue: dashboardService },
+        { provide: PrediccionBinariaService, useValue: prediccionService },
+        { provide: ArchivoService, useValue: archivoService },
+        { provide: AuthService, useValue: authService }
+      ]
+    }).compileComponents();
+    fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+  });
+
+  it('diferencia nombres iguales y consulta cada archivo por su ID numérico', () => {
+    const select = (fixture.nativeElement as HTMLElement).querySelector('#archivoFiltro') as HTMLSelectElement;
+    expect(select.options[1].textContent?.trim()).toBe('ConsultaD1_2025_v20.csv (ID 1)');
+    expect(select.options[2].textContent?.trim()).toBe('ConsultaD1_2025_v20.csv (ID 4)');
+
+    select.value = select.options[1].value;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.idArchivoFiltro).toBe(1);
+    expect(dashboardService.obtenerDetalle).toHaveBeenCalledWith(1);
+    expect(fixture.componentInstance.totalIngresos).toBe(10);
+
+    select.value = select.options[2].value;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.idArchivoFiltro).toBe(4);
+    expect(dashboardService.obtenerDetalle).toHaveBeenCalledWith(4);
+    expect(fixture.componentInstance.totalIngresos).toBe(20);
+    expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
+});
