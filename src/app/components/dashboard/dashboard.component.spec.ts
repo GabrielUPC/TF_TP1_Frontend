@@ -7,6 +7,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { PrediccionBinariaService } from '../../services/prediccion-binaria.service';
 import { ArchivoService } from '../../services/archivo.service';
 import { AuthService } from '../../services/auth.service';
+import { PrediccionBinariaAutomaticaResponse } from '../../models/prediccion-binaria';
 
 describe('DashboardComponent - indicadores no calculables', () => {
   let component: DashboardComponent;
@@ -333,5 +334,174 @@ describe('DashboardComponent - archivos observados con nombres repetidos', () =>
     expect(dashboardService.obtenerDetalle).toHaveBeenCalledWith(4);
     expect(fixture.componentInstance.totalIngresos).toBe(20);
     expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
+});
+
+describe('DashboardComponent - tendencia observada CP029', () => {
+  let component: DashboardComponent;
+  let dashboardService: jasmine.SpyObj<DashboardService>;
+  let prediccionService: jasmine.SpyObj<PrediccionBinariaService>;
+  const serie = [80, 82, 84, 86, 88, 92].map((porcentaje, indice) => detalle({
+    idArchivo: 45, idRegistro: indice + 1, anio: 2025, mes: indice + 1,
+    servicioHospitalario: 'MEDICINA', pacientesCama: porcentaje,
+    totalCamasDisponibles: 100, ocupacionEstimada: porcentaje / 100
+  }));
+  const registros = [
+    detalle({ idArchivo: 45, anio: 2016, mes: 12, servicioHospitalario: 'MEDICINA',
+      pacientesCama: 80, totalCamasDisponibles: 100 }),
+    ...serie,
+    detalle({ idArchivo: 45, anio: 2024, mes: 12, servicioHospitalario: 'MEDICINA',
+      pacientesCama: 70, totalCamasDisponibles: 100 }),
+    detalle({ idArchivo: 45, anio: 2025, mes: 6, servicioHospitalario: 'CIRUGÍA',
+      pacientesCama: 40, totalCamasDisponibles: 100 }),
+    detalle({ idArchivo: 46, anio: 2025, mes: 6, servicioHospitalario: 'MEDICINA',
+      pacientesCama: 25, totalCamasDisponibles: 100 })
+  ];
+
+  beforeEach(() => {
+    dashboardService = jasmine.createSpyObj<DashboardService>('DashboardService',
+      ['obtenerResumen', 'obtenerDetalle', 'obtenerAlertas', 'filtrar']);
+    prediccionService = jasmine.createSpyObj<PrediccionBinariaService>('PrediccionBinariaService',
+      ['obtenerCatalogo', 'predecir']);
+    const archivoService = jasmine.createSpyObj<ArchivoService>('ArchivoService',
+      ['listarArchivosProcesados']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['obtenerUsuarioActual']);
+    dashboardService.obtenerResumen.and.returnValue(of({} as DashboardResumen));
+    dashboardService.obtenerDetalle.and.callFake(id => of(
+      id === undefined ? registros : registros.filter(item => item.idArchivo === id)
+    ));
+    dashboardService.obtenerAlertas.and.returnValue(of([]));
+    prediccionService.obtenerCatalogo.and.returnValue(of({
+      codigoIpress: '00007636', nombreIpress: 'IPRESS QA SINTETICA', servicios: []
+    }));
+    archivoService.listarArchivosProcesados.and.returnValue(of([]));
+    authService.obtenerUsuarioActual.and.returnValue(null);
+    component = new DashboardComponent(dashboardService, prediccionService,
+      archivoService, authService);
+    component.cargarDashboard();
+  });
+
+  it('muestra seis meses de 2025 y promedio 85.3% sin predecir ni usar diciembre de 2016', () => {
+    component.idArchivoFiltro = 45;
+    component.consultarArchivoObservado();
+    component.servicioFiltro = 'MEDICINA';
+    component.alCambiarServicio();
+    component.anioFiltro = 2025;
+    component.alCambiarAnio();
+    component.mesFiltro = 6;
+    component.alCambiarMes();
+
+    expect(component.puntosOcupacion.map(p => p.periodo))
+      .toEqual(['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06']);
+    expect(component.puntosOcupacion.map(p => component.formatearPorcentaje(p.valor)))
+      .toEqual(['80.0%', '82.0%', '84.0%', '86.0%', '88.0%', '92.0%']);
+    expect(component.formatearPorcentaje(component.promedioOcupacionTendencia)).toBe('85.3%');
+    expect(component.yUmbralOcupacion).toBeGreaterThan(0);
+    expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
+
+  it('cambia servicio, año y mes sin conservar la tendencia anterior', () => {
+    component.idArchivoFiltro = 45;
+    component.consultarArchivoObservado();
+    component.servicioFiltro = 'MEDICINA';
+    component.alCambiarServicio();
+    component.anioFiltro = 2025;
+    component.alCambiarAnio();
+    component.mesFiltro = 6;
+    component.alCambiarMes();
+
+    component.mesFiltro = 5;
+    component.alCambiarMes();
+    expect(component.puntosOcupacion.map(p => p.periodo))
+      .toEqual(['2024-12', '2025-01', '2025-02', '2025-03', '2025-04', '2025-05']);
+
+    component.anioFiltro = 2016;
+    component.alCambiarAnio();
+    expect(component.puntosOcupacion.map(p => p.periodo)).toEqual(['2016-12']);
+
+    component.servicioFiltro = 'CIRUGÍA';
+    component.alCambiarServicio();
+    expect(component.puntosOcupacion.map(p => p.periodo)).toEqual(['2025-06']);
+    expect(component.formatearPorcentaje(component.puntosOcupacion[0].valor)).toBe('40.0%');
+  });
+
+  it('aísla el archivo seleccionado y limpia una selección sin registros', () => {
+    component.idArchivoFiltro = 45;
+    component.consultarArchivoObservado();
+    expect(component.puntosOcupacion.some(p => p.valor === .25)).toBeFalse();
+
+    component.idArchivoFiltro = 46;
+    component.consultarArchivoObservado();
+    expect(component.puntosOcupacion.map(p => p.periodo)).toEqual(['2025-06']);
+    expect(component.formatearPorcentaje(component.puntosOcupacion[0].valor)).toBe('25.0%');
+
+    component.idArchivoFiltro = 99;
+    component.consultarArchivoObservado();
+    expect(component.puntosOcupacion).toEqual([]);
+    expect(component.barrasIngresos).toEqual([]);
+    expect(component.registroSeleccionado).toBeNull();
+    expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una predicción sin ventana válida sin borrar la observación', () => {
+    component.idArchivoFiltro = 45;
+    component.consultarArchivoObservado();
+    component.servicioFiltro = 'MEDICINA';
+    component.alCambiarServicio();
+    component.anioFiltro = 2025;
+    component.alCambiarAnio();
+    component.mesFiltro = 6;
+    component.alCambiarMes();
+    component.analizarPeriodo();
+
+    expect(component.error).toContain('seis meses consecutivos');
+    expect(component.puntosOcupacion.length).toBe(6);
+    expect(prediccionService.predecir).not.toHaveBeenCalled();
+  });
+
+  it('descarta respuestas observacionales antiguas tras cambiar de archivo', () => {
+    const primera = new Subject<DashboardDetalle[]>();
+    const segunda = new Subject<DashboardDetalle[]>();
+    dashboardService.obtenerDetalle.and.callFake(id =>
+      id === 45 ? primera.asObservable() : id === 46 ? segunda.asObservable() : of(registros)
+    );
+    component.idArchivoFiltro = 45;
+    component.consultarArchivoObservado();
+    component.idArchivoFiltro = 46;
+    component.consultarArchivoObservado();
+    segunda.next(registros.filter(item => item.idArchivo === 46));
+    segunda.complete();
+    primera.next(registros.filter(item => item.idArchivo === 45));
+    primera.complete();
+
+    expect(component.idArchivoFiltro).toBe(46);
+    expect(component.puntosOcupacion.map(p => p.periodo)).toEqual(['2025-06']);
+    expect(component.formatearPorcentaje(component.puntosOcupacion[0].valor)).toBe('25.0%');
+  });
+
+  it('ignora una predicción tardía tras cambiar de servicio', () => {
+    const prediccionPendiente = new Subject<PrediccionBinariaAutomaticaResponse>();
+    prediccionService.predecir.and.returnValue(prediccionPendiente.asObservable());
+    component.catalogo = {
+      codigoIpress: '00007636', nombreIpress: 'IPRESS QA SINTETICA',
+      servicios: [{ servicio: 'MEDICINA', periodosDisponibles: ['2025-06'] }]
+    };
+    component.servicioFiltro = 'MEDICINA';
+    component.alCambiarServicio();
+    component.anioFiltro = 2025;
+    component.alCambiarAnio();
+    component.mesFiltro = 6;
+    component.alCambiarMes();
+    component.analizarPeriodo();
+
+    component.servicioFiltro = 'CIRUGÍA';
+    component.alCambiarServicio();
+    prediccionPendiente.next({} as PrediccionBinariaAutomaticaResponse);
+    prediccionPendiente.complete();
+
+    expect(component.resultado).toBeNull();
+    expect(component.puntosOcupacion.map(p => p.periodo)).toEqual(['2025-06']);
+    expect(component.formatearPorcentaje(component.puntosOcupacion[0].valor)).toBe('40.0%');
+    expect(dashboardService.filtrar).not.toHaveBeenCalled();
   });
 });

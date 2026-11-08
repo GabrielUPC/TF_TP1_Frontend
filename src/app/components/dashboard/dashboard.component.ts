@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { catchError, filter, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ArchivoProcesado } from '../../models/archivo-procesado';
 import { DashboardDetalle } from '../../models/dashboard-detalle';
@@ -63,6 +63,11 @@ export class DashboardComponent implements OnInit {
   cargando = false;
   error = '';
   private solicitudVersion = 0;
+  private prediccionVersion = 0;
+  private consultaObservadaEnCurso = false;
+  private detalleObservado: DashboardDetalle[] = [];
+  private resumenObservado: DashboardResumen | null = null;
+  private alertasObservadas: DashboardDetalle[] = [];
 
   readonly meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -91,13 +96,18 @@ export class DashboardComponent implements OnInit {
 
   consultarArchivoObservado(): void {
     const version = ++this.solicitudVersion;
+    ++this.prediccionVersion;
     const idArchivo = this.idArchivoFiltro ?? undefined;
     this.cargando = true;
+    this.consultaObservadaEnCurso = true;
     this.error = '';
     this.resultado = null;
     this.resumen = null;
     this.detalle = [];
     this.alertas = [];
+    this.detalleObservado = [];
+    this.resumenObservado = null;
+    this.alertasObservadas = [];
     this.establecerDatosVisualesBase([]);
     forkJoin({
       resumen: this.dashboardService.obtenerResumen(idArchivo),
@@ -106,16 +116,20 @@ export class DashboardComponent implements OnInit {
     }).subscribe({
       next: data => {
         if (version !== this.solicitudVersion) return;
-        this.resumen = data.resumen;
-        this.detalle = data.detalle ?? [];
-        this.establecerDatosVisualesBase(this.detalle);
-        this.alertas = data.alertas ?? [];
+        this.resumenObservado = data.resumen;
+        this.detalleObservado = (data.detalle ?? []).filter(item =>
+          idArchivo === undefined || item.idArchivo === idArchivo
+        );
+        this.alertasObservadas = data.alertas ?? [];
+        this.restaurarDatosObservados();
         this.cargando = false;
+        this.consultaObservadaEnCurso = false;
       },
       error: () => {
         if (version !== this.solicitudVersion) return;
         this.error = 'No se pudo cargar la información observada. Verifica la conexión e intenta nuevamente.';
         this.cargando = false;
+        this.consultaObservadaEnCurso = false;
       }
     });
   }
@@ -130,7 +144,7 @@ export class DashboardComponent implements OnInit {
       this.error = 'El periodo no tiene una ventana válida de seis meses consecutivos.';
       return;
     }
-    const version = ++this.solicitudVersion;
+    const version = ++this.prediccionVersion;
     this.cargando = true;
     this.error = '';
     this.resultado = null;
@@ -138,32 +152,27 @@ export class DashboardComponent implements OnInit {
       servicio: this.servicioFiltro,
       periodo_actual: periodo
     }).pipe(
+      filter(() => version === this.prediccionVersion),
       switchMap(resultado => {
         const idArchivo = this.idArchivoFiltro ?? undefined;
         const anio = this.anioFiltro ?? undefined;
         const mes = this.mesFiltro ?? undefined;
         return forkJoin({
-          detalle: this.dashboardService.filtrar(idArchivo, anio, mes, this.servicioFiltro),
-          actividad: this.dashboardService.filtrar(idArchivo, anio, mes).pipe(catchError(() => of([]))),
-          tendencia: this.dashboardService.filtrar(idArchivo, anio, undefined, this.servicioFiltro)
-            .pipe(catchError(() => of([])))
+          detalle: this.dashboardService.filtrar(idArchivo, anio, mes, this.servicioFiltro)
         }).pipe(map(data => ({ ...data, resultado })));
       })
     ).subscribe({
       next: data => {
-        if (version !== this.solicitudVersion) return;
+        if (version !== this.prediccionVersion) return;
         this.resultado = data.resultado;
         this.detalle = data.detalle;
-        this.datosActividad = data.actividad;
-        this.datosTendencia = data.tendencia.filter(item =>
-          this.mesFiltro === null || item.mes <= this.mesFiltro
-        );
+        this.establecerDatosVisualesBase(this.detalleObservado);
         this.resumen = this.resumenDesdeDetalle(data.detalle);
         this.alertas = data.detalle.filter(item => item.alertaAltaPresion === true);
         this.cargando = false;
       },
       error: error => {
-        if (version !== this.solicitudVersion) return;
+        if (version !== this.prediccionVersion) return;
         const cuerpo = error?.error as PrediccionBinariaAutomaticaError | undefined;
         const detalle = typeof error?.error?.detail === 'string'
           ? error.error.detail
@@ -186,14 +195,15 @@ export class DashboardComponent implements OnInit {
   }
 
   alCambiarServicio(): void {
-    this.anioFiltro = null; this.mesFiltro = null; this.resultado = null; this.error = '';
+    this.anioFiltro = null; this.mesFiltro = null; this.actualizarSeleccionObservada();
   }
   alCambiarAnio(): void {
     if (this.mesFiltro !== null && !this.mesesDisponibles.includes(this.mesFiltro)) {
       this.mesFiltro = null;
     }
-    this.resultado = null; this.error = '';
+    this.actualizarSeleccionObservada();
   }
+  alCambiarMes(): void { this.actualizarSeleccionObservada(); }
 
   get ipressAsignada(): string {
     return this.catalogo?.nombreIpress
@@ -201,20 +211,30 @@ export class DashboardComponent implements OnInit {
       || 'IPRESS no asignada';
   }
   get serviciosDisponibles(): string[] {
-    return this.catalogo?.servicios.map(s => s.servicio) ?? [];
+    return [...new Set([
+      ...(this.catalogo?.servicios.map(s => s.servicio) ?? []),
+      ...this.detalleObservado.map(item => item.servicioHospitalario)
+    ])].sort();
   }
   get periodosDisponibles(): string[] {
     return this.catalogo?.servicios.find(s => s.servicio === this.servicioFiltro)
       ?.periodosDisponibles ?? [];
   }
   get aniosDisponibles(): number[] {
-    return [...new Set(this.periodosDisponibles.map(p => Number(p.slice(0, 4))))]
+    return [...new Set([
+      ...this.periodosDisponibles.map(p => Number(p.slice(0, 4))),
+      ...this.detalleObservado.filter(item => item.servicioHospitalario === this.servicioFiltro)
+        .map(item => item.anio)
+    ])]
       .sort((a, b) => b - a);
   }
   get mesesDisponibles(): number[] {
-    return this.periodosDisponibles
-      .filter(p => Number(p.slice(0, 4)) === this.anioFiltro)
-      .map(p => Number(p.slice(5, 7))).sort((a, b) => a - b);
+    return [...new Set([
+      ...this.periodosDisponibles.filter(p => Number(p.slice(0, 4)) === this.anioFiltro)
+        .map(p => Number(p.slice(5, 7))),
+      ...this.detalleObservado.filter(item => item.servicioHospitalario === this.servicioFiltro
+        && item.anio === this.anioFiltro).map(item => item.mes)
+    ])].sort((a, b) => a - b);
   }
   get periodoSeleccionado(): string | null {
     return this.anioFiltro !== null && this.mesFiltro !== null
@@ -413,16 +433,43 @@ export class DashboardComponent implements OnInit {
   }
 
   private establecerDatosVisualesBase(detalle: DashboardDetalle[]): void {
-    const base = detalle[0];
+    const servicio = this.servicioFiltro || [...detalle].sort((a, b) =>
+      (b.anio * 12 + b.mes) - (a.anio * 12 + a.mes)
+    )[0]?.servicioHospitalario;
+    const registrosServicio = detalle.filter(item => item.servicioHospitalario === servicio);
+    const periodos = registrosServicio.filter(item =>
+      (this.anioFiltro === null || item.anio === this.anioFiltro)
+      && (this.mesFiltro === null || item.mes === this.mesFiltro)
+    );
+    const base = [...periodos].sort((a, b) =>
+      (b.anio * 12 + b.mes) - (a.anio * 12 + a.mes)
+    )[0];
     if (!base) {
       this.datosActividad = [];
       this.datosTendencia = [];
       return;
     }
     this.datosActividad = detalle.filter(item => item.anio === base.anio && item.mes === base.mes);
+    const mesFinal = base.anio * 12 + base.mes;
     this.datosTendencia = detalle.filter(item =>
-      item.anio === base.anio && item.servicioHospitalario === base.servicioHospitalario
+      item.servicioHospitalario === servicio && item.anio * 12 + item.mes <= mesFinal
+      && item.anio * 12 + item.mes > mesFinal - 6
     );
+  }
+
+  private restaurarDatosObservados(): void {
+    this.detalle = this.detalleObservado;
+    this.resumen = this.resumenObservado;
+    this.alertas = this.alertasObservadas;
+    this.establecerDatosVisualesBase(this.detalleObservado);
+  }
+
+  private actualizarSeleccionObservada(): void {
+    ++this.prediccionVersion;
+    this.resultado = null;
+    this.error = '';
+    this.cargando = this.consultaObservadaEnCurso;
+    this.restaurarDatosObservados();
   }
 
   private sumar(campo: keyof DashboardDetalle): number {

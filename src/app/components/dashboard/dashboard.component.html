@@ -47,7 +47,7 @@
       </div>
       <div class="filter-field">
         <label for="mesFiltro">Mes base</label>
-        <select id="mesFiltro" [(ngModel)]="mesFiltro" [disabled]="anioFiltro === null">
+        <select id="mesFiltro" [(ngModel)]="mesFiltro" (ngModelChange)="alCambiarMes()" [disabled]="anioFiltro === null">
           <option [ngValue]="null">Selecciona</option>
           <option *ngFor="let mes of mesesDisponibles" [ngValue]="mes">{{ nombreMes(mes) }}</option>
         </select>
